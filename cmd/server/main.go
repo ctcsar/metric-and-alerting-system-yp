@@ -33,14 +33,15 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	if r.PathValue("type") != "gauge" && r.PathValue("type") != "counter" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if r.PathValue("name") == " " {
+	if r.PathValue("name") == "none" {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+	if r.PathValue("type") != "gauge" || r.PathValue("type") != "counter" || r.PathValue("value") == "none" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	storrage.setStorage(r.PathValue("value"), r.PathValue("type"))
 	w.WriteHeader(http.StatusOK)
 }
