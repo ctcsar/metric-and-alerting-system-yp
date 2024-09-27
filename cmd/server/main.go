@@ -37,7 +37,7 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	if r.PathValue("type") != "gauge" || r.PathValue("type") != "counter" || r.PathValue("value") == "none" {
+	if r.PathValue("type") != "gauge" && r.PathValue("type") != "counter" || r.PathValue("value") == "none" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
