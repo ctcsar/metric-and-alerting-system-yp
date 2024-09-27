@@ -52,6 +52,7 @@ func run() error {
 
 func main() {
 	http.HandleFunc("/update/{type}/{name}/{value}", webhook)
+	//Запускем сервер
 	if err := run(); err != nil {
 		panic(err)
 	}
