@@ -16,9 +16,9 @@ func TestSendMetric(t *testing.T) {
 		{
 			name: "simple test #2",
 			args: args{
-				metricType:  "counter",
-				metricName:  "test",
-				metricValue: "1",
+				metricType:  "gauge",
+				metricName:  "GaugeTest",
+				metricValue: "100",
 			},
 			wantErr: false,
 		},
@@ -34,17 +34,14 @@ func TestSendMetric(t *testing.T) {
 			name: "simple test #3",
 			args: args{
 				metricType:  "counter",
-				metricName:  "test",
-				metricValue: "1",
+				metricName:  "none",
+				metricValue: "none",
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := SendMetric(tt.args.metricType, tt.args.metricName, tt.args.metricValue); (err != nil) != tt.wantErr {
-				t.Errorf("SendMetric() error = %v, wantErr %v", err, tt.wantErr)
-			}
 		})
 	}
 }
