@@ -12,14 +12,13 @@ func TestWebhook(t *testing.T) {
 	testCases := []struct {
 		method       string
 		expectedCode int
-		Url          string
 	}{
-		{method: http.MethodGet, expectedCode: http.StatusMethodNotAllowed, Url: "gauge/AllLoc/234"},
+		{method: http.MethodGet, expectedCode: http.StatusMethodNotAllowed},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
-			r := httptest.NewRequest(tc.method, "localhost:8080/update/"+tc.Url, nil)
+			r := httptest.NewRequest(tc.method, "/", nil)
 			w := httptest.NewRecorder()
 
 			// вызовем хендлер как обычную функцию, без запуска самого сервера
