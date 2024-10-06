@@ -70,8 +70,8 @@ func TestStorage_SetStorage(t *testing.T) {
 	}
 
 	// Test that SetStorage sets the expected value
-	m.SetStorage("10.0", "", "")
+	m.SetStorage("10.0", "gauge", "test")
 	assert.Equal(t, map[string]float64{
-		"": 10.0,
+		"test": 10.0,
 	}, m.Gauge)
 }
