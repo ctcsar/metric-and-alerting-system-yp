@@ -20,7 +20,7 @@ func (m *MemStorage) String() string {
 	// implement the string representation of MemStorage
 	return fmt.Sprintf("MemStorage{Metrics: %+v}", m.Metrics)
 }
-func (m *MemStorage) setStorage(r float64) {
+func (m *MemStorage) SetStorage(r float64) {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -66,7 +66,7 @@ func (m *MemStorage) GetMetrics() MemStorage {
 	var counter int64 = 0
 	for {
 		RandomValue := rand.Float64()
-		m.setStorage(RandomValue)
+		m.SetStorage(RandomValue)
 		m.SetCounter(counter)
 		time.Sleep(2 * time.Second)
 		counter++

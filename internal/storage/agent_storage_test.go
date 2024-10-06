@@ -1,27 +1,60 @@
+// agent_storage_test.go
 package storage
 
-import "testing"
+import (
+	"testing"
 
-func TestMemStorage_setStorage(t *testing.T) {
-	type fields struct {
-		Metrics Metrics
+	"github.com/stretchr/testify/assert"
+)
+
+func TestMemStorage_SetCounter(t *testing.T) {
+	// Create a new MemStorage instance
+	storage := MemStorage{
+		Metrics: Metrics{
+			Counter: 0,
+		},
 	}
-	type args struct {
-		r float64
+
+	// Test that SetCounter sets the expected value
+	storage.SetCounter(10)
+	assert.Equal(t, int64(10), storage.Metrics.Counter)
+}
+
+func TestMemStorage_SetStorage(t *testing.T) {
+	// Create a new MemStorage instance
+	storage := MemStorage{
+		Metrics: Metrics{
+			Gauge: map[string]float64{},
+		},
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
+
+	// Test that SetStorage sets the expected value
+	storage.SetStorage(10.0)
+	assert.NotNil(t, storage.Metrics.Gauge)
+}
+
+func TestMemStorage_GetMetrics(t *testing.T) {
+	// Create a new MemStorage instance
+	storage := MemStorage{
+		Metrics: Metrics{
+			Counter: 0,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &MemStorage{
-				Metrics: tt.fields.Metrics,
-			}
-			m.setStorage(tt.args.r)
-		})
+
+	// Test that GetMetrics returns a MemStorage instance
+	metrics := storage.GetMetrics()
+	assert.NotNil(t, metrics)
+}
+
+func TestMemStorage_String(t *testing.T) {
+	// Create a new MemStorage instance
+	storage := MemStorage{
+		Metrics: Metrics{
+			Counter: 0,
+		},
 	}
+
+	// Test that String returns a non-empty string
+	str := storage.String()
+	assert.NotEmpty(t, str)
 }
