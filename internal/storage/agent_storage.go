@@ -13,14 +13,14 @@ type MemStorage struct {
 
 type Metrics struct {
 	Gauge   map[string]float64
-	Counter int64
+	Counter map[string]int64
 }
 
 func (m *MemStorage) String() string {
 	// implement the string representation of MemStorage
 	return fmt.Sprintf("MemStorage{Metrics: %+v}", m.Metrics)
 }
-func (m *MemStorage) SetStorage(r float64) {
+func (m *MemStorage) SetStorage(rand float64) {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -52,14 +52,16 @@ func (m *MemStorage) SetStorage(r float64) {
 		"StackSys":      float64(memStats.StackSys),
 		"Sys":           float64(memStats.Sys),
 		"TotalAlloc":    float64(memStats.TotalAlloc),
-		"RandomValue":   r,
+		"RandomValue":   rand,
 	}
 
 }
 
 func (m *MemStorage) SetCounter(count int64) {
 
-	m.Metrics.Counter = count
+	m.Metrics.Counter = map[string]int64{
+		"counter": count,
+	}
 }
 
 func (m *MemStorage) GetMetrics() MemStorage {

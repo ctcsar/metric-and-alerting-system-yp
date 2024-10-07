@@ -7,11 +7,11 @@ import (
 )
 
 func main() {
+	g := storage.NewGaugeStorage()
+	c := storage.NewCounterStorage()
 	r := chi.NewRouter()
-	m := storage.Storage{}
-	handlers.Webhook(r, m)
 	//Запускем сервер
-	if err := handlers.Run(r, m); err != nil {
+	if err := handlers.Run(r, g, c); err != nil {
 		panic(err)
 	}
 }

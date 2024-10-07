@@ -2,61 +2,56 @@ package storage
 
 import (
 	"fmt"
-	"strconv"
-	"sync"
-)
-
-var (
-	storageInstance *Storage
-	once            sync.Once
 )
 
 type Storage struct {
 	Gauge   map[string]float64
-	Counter int64
+	Counter map[string]int64
 }
 
-func GetStorageInstance() *Storage {
-	once.Do(func() {
-		storageInstance = &Storage{
-			Gauge: make(map[string]float64),
-		}
-	})
-	return storageInstance
+func NewGaugeStorage() *Storage {
+	return &Storage{
+		Gauge: make(map[string]float64),
+	}
+}
+
+func NewCounterStorage() *Storage {
+	return &Storage{
+		Counter: make(map[string]int64),
+	}
 }
 
 func (m *Storage) String() string {
-	return fmt.Sprintf("Storage{gauge: %+v, counter: %d}", m.Gauge, m.Counter)
-}
-func (m *Storage) GetMetricValue(metricType string, metricName string) (float64, bool) {
-	if metricType == "gauge" {
-		value, ok := m.Gauge[metricName]
-		return value, ok
-	} else if metricType == "counter" {
-		return float64(m.Counter), true
-	}
-	return 0, false
+	return fmt.Sprintf("Storage{gauge: %+v, counter: %+v}", m.Gauge, m.Counter)
 }
 
-func (m *Storage) GetAllMetrics() map[string]map[string]float64 {
+func (m *Storage) SetGauge(key string, val float64) error {
+	m.Gauge[key] = val
+	return nil
+}
+
+func (m *Storage) SetCounter(key string, val int64) error {
+	m.Counter[key] = m.Counter[key] + val
+	return nil
+}
+func (m *Storage) GetGaugeValue(metricName string) (float64, bool) {
+	value, ok := m.Gauge[metricName]
+	return value, ok
+}
+
+func (m *Storage) GetCounterValue(metricName string) (int64, bool) {
+	value, ok := m.Counter[metricName]
+	return value, ok
+}
+
+func (m *Storage) GetAllGaugeMetrics() map[string]map[string]float64 {
 	metrics := make(map[string]map[string]float64)
 	metrics["gauge"] = m.Gauge
-	metrics["counter"] = map[string]float64{"counter": float64(m.Counter)}
 	return metrics
 }
-func (m *Storage) SetStorage(v, t, n string) {
-	switch t {
-	case "gauge":
-		val, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			panic(err)
-		}
-		m.Gauge = map[string]float64{n: val}
-	case "counter":
-		val, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			panic(err)
-		}
-		m.Counter = val
-	}
+
+func (m *Storage) GetAllCounterMetrics() map[string]map[string]int64 {
+	metrics := make(map[string]map[string]int64)
+	metrics["counter"] = m.Counter
+	return metrics
 }

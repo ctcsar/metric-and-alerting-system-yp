@@ -17,10 +17,11 @@ func main() {
 		metrics := memStorage.Metrics
 		for k, v := range metrics.Gauge {
 
-			// fmt.Printf("%s: %f\n", k, v)
 			handlers.SendMetric("gauge", k, fmt.Sprintf("%f", v))
 		}
-		handlers.SendMetric("counter", "counter", fmt.Sprintf("%d", metrics.Counter))
+		for k, v := range metrics.Counter {
+			handlers.SendMetric("counter", k, fmt.Sprintf("%d", v))
+		}
 
 		time.Sleep(12 * time.Second)
 	}

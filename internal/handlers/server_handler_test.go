@@ -1,198 +1,61 @@
+// agent_handler_test.go
 package handlers
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
-
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
-	"github.com/go-chi/chi/v5"
 )
 
-func TestGetMetricValueHandler(t *testing.T) {
-	// Create a new chi router
-	r := chi.NewRouter()
-
-	// Create a test storage instance
-	storageInstance := storage.Storage{
-		Gauge: map[string]float64{
-			"test": 10.0,
-		},
-		Counter: 0,
-	}
-
-	// Register the GetMetricValueHandler with the test storage instance
-	r.Get("/value/{type}/{name}", GetMetricValueHandler(storageInstance))
-
-	// Test cases
+func TestSendMetric(t *testing.T) {
 	tests := []struct {
 		name           string
-		url            string
+		metricType     string
+		metricName     string
+		metricValue    string
 		expectedStatus int
-		expectedBody   string
 	}{
 		{
-			name:           "Get gauge metric value",
-			url:            "/value/gauge/test",
+			name:           "Send gauge metric",
+			metricType:     "gauge",
+			metricName:     "test",
+			metricValue:    "10.0",
 			expectedStatus: http.StatusOK,
-			expectedBody:   "10.000000",
 		},
 		{
-			name:           "Get counter metric value",
-			url:            "/value/counter/",
+			name:           "Send counter metric",
+			metricType:     "counter",
+			metricName:     "test",
+			metricValue:    "10",
 			expectedStatus: http.StatusOK,
-			expectedBody:   "0.000000",
 		},
 		{
-			name:           "Get unknown metric type",
-			url:            "/value/unknown/test",
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "",
-		},
-		{
-			name:           "Get unknown metric name",
-			url:            "/value/gauge/unknown",
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "",
+			name:           "Send invalid metric type",
+			metricType:     "unknown",
+			metricName:     "test",
+			metricValue:    "10.0",
+			expectedStatus: http.StatusInternalServerError,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// // Create a test request
-			// req, err := http.NewRequest("GET", test.url, nil)
-			// if err != nil {
-			// 	t.Fatal(err)
-			// }
+			// Create a test server to mock the HTTP request
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(test.expectedStatus)
+			}))
+			defer ts.Close()
 
-			// // Create a test response recorder
-			// w := httptest.NewRecorder()
+			// Update the URL in the SendMetric function to point to the test server
+			// url := fmt.Sprintf("%s/update/%s/%s/%s", ts.URL, test.metricType, test.metricName, test.metricValue)
 
-			// // Serve the request
-			// r.ServeHTTP(w, req)
+			// Call the SendMetric function
+			err := SendMetric(test.metricType, test.metricName, test.metricValue)
 
-			// // Check the response status code
-			// assert.Equal(t, test.expectedStatus, w.Code)
-
-			// // Check the response body
-			// assert.Equal(t, test.expectedBody, w.Body.String())
-		})
-	}
-}
-
-func TestGetAllMetricsHandler(t *testing.T) {
-	// Create a new chi router
-	r := chi.NewRouter()
-
-	// Create a test storage instance
-	storageInstance := storage.Storage{
-		Gauge: map[string]float64{
-			"test": 10.0,
-		},
-		Counter: 0,
-	}
-
-	// Register the GetAllMetricsHandler with the test storage instance
-	r.Get("/", GetAllMetricsHandler(storageInstance))
-
-	// Test cases
-	tests := []struct {
-		name           string
-		url            string
-		expectedStatus int
-		expectedBody   string
-	}{
-		{
-			name:           "Get all metrics",
-			url:            "/",
-			expectedStatus: http.StatusOK,
-			expectedBody:   "<html><body><h1>gauge</h1><p>test: 10.000000</p><h1>counter</h1><p>counter: 0.000000</p></body></html>",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// Create a test request
-			// req, err := http.NewRequest("GET", test.url, nil)
-			// if err != nil {
-			// 	t.Fatal(err)
-			// }
-
-			// // Create a test response recorder
-			// w := httptest.NewRecorder()
-
-			// // Serve the request
-			// r.ServeHTTP(w, req)
-
-			// // Check the response status code
-			// assert.Equal(t, test.expectedStatus, w.Code)
-
-			// // Check the response body
-			// assert.Equal(t, test.expectedBody, w.Body.String())
-		})
-	}
-}
-
-func TestWebhook(t *testing.T) {
-	// Register the Webhook with the test storage instance
-
-	// Test cases
-	tests := []struct {
-		name           string
-		url            string
-		expectedStatus int
-		expectedBody   string
-	}{
-		{
-			name:           "Get gauge metric value",
-			url:            "/value/gauge/test",
-			expectedStatus: http.StatusOK,
-			expectedBody:   "10.000000",
-		},
-		{
-			name:           "Get counter metric value",
-			url:            "/value/counter/",
-			expectedStatus: http.StatusOK,
-			expectedBody:   "0.000000",
-		},
-		{
-			name:           "Get unknown metric type",
-			url:            "/value/unknown/test",
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "",
-		},
-		{
-			name:           "Get unknown metric name",
-			url:            "/value/gauge/unknown",
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "",
-		},
-		{
-			name:           "Get all metrics",
-			url:            "/",
-			expectedStatus: http.StatusOK,
-			expectedBody:   "<html><body><h1>gauge</h1><p>test: 10.000000</p><h1>counter</h1><p>counter: 0.000000</p></body></html>",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// // Create a test request
-			// req, err := http.NewRequest("GET", test.url, nil)
-			// if err != nil {
-			// 	t.Fatal(err)
-			// }
-
-			// // Create a test response recorder
-			// w := httptest.NewRecorder()
-
-			// // Serve the request
-			// r.ServeHTTP(w, req)
-
-			// // Check the response status code
-			// assert.Equal(t, test.expectedStatus, w.Code)
-
-			// // Check the response body
-			// assert.Equal(t, test.expectedBody, w.Body.String())
+			// Check if the error is nil
+			if err != nil {
+				t.Errorf("expected nil error, got %v", err)
+			}
 		})
 	}
 }
