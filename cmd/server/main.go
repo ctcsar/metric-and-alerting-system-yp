@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	parseFlags()
+	ParseFlags()
 	g := storage.NewGaugeStorage()
 	c := storage.NewCounterStorage()
 	r := chi.NewRouter()
