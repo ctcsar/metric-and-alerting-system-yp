@@ -111,6 +111,7 @@ func TestRun(t *testing.T) {
 	// Create a test storage
 	g := storage.NewGaugeStorage()
 	c := storage.NewCounterStorage()
+	url := "localhost:8080"
 
 	// Create a test router
 	r := chi.NewRouter()
@@ -118,14 +119,11 @@ func TestRun(t *testing.T) {
 
 	// Start the server
 	go func() {
-		err := Run(r, g, c)
+		err := Run(url, r, g, c)
 		assert.NoError(t, err)
 	}()
 	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)
 	assert.NoError(t, err)
-	// Create a test request
-	// req, err := http.NewRequest("GET", "/value/gauge/test", nil)
-	// assert.NoError(t, err)
 
 	// Create a test response recorder
 	w := httptest.NewRecorder()

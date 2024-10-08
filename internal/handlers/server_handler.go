@@ -116,7 +116,7 @@ func Webhook(r chi.Router, g *storage.Storage, c *storage.Storage) {
 	r.Post("/update/{type}/{name}/{value}", UpdateHandler(r, g, c))
 }
 
-func Run(r chi.Router, g *storage.Storage, c *storage.Storage) error {
+func Run(url string, r chi.Router, g *storage.Storage, c *storage.Storage) error {
 	Webhook(r, g, c)
-	return http.ListenAndServe(":8080", r)
+	return http.ListenAndServe(url, r)
 }
