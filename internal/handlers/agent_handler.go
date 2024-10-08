@@ -7,7 +7,7 @@ import (
 )
 
 func SendMetric(sendURL string, metricType string, metricName string, metricValue string) error {
-	url := fmt.Sprintf(sendURL+"/update/%s/%s/%s", metricType, metricName, metricValue)
+	url := fmt.Sprintf("http://"+sendURL+"/update/%s/%s/%s", metricType, metricName, metricValue)
 	_, err := resty.New().R().SetHeader("Content-Type", "text/plain").SetHeader("Content-Length", "0").Post(url)
 	if err != nil {
 		return err
