@@ -60,7 +60,7 @@ func (m *MemStorage) SetStorage(rand float64) {
 func (m *MemStorage) SetCounter(count int64) {
 
 	m.Metrics.Counter = map[string]int64{
-		"counter": count,
+		"PollCount": count,
 	}
 }
 

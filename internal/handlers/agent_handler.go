@@ -12,7 +12,5 @@ func SendMetric(metricType string, metricName string, metricValue string) error 
 	if err != nil {
 		return err
 	}
-
-	// fmt.Println("request: ", req)
 	return nil
 }
