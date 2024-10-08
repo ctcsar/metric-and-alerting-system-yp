@@ -17,7 +17,7 @@ func ParseFlags() {
 	// для случаев, когда в переменной окружения RUN_ADDR присутствует непустое значение,
 	// переопределим адрес запуска сервера,
 	// даже если он был передан через аргумент командной строки
-	if envRunAddr := os.Getenv("RUN_ADDR"); envRunAddr != "" {
+	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		flagRunAddr = envRunAddr
 	}
 
