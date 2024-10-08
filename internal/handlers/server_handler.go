@@ -29,7 +29,7 @@ func GetMetricValueHandler(g *storage.Storage, c *storage.Storage) http.HandlerF
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
-			fmt.Fprintf(w, "%f", val)
+			fmt.Fprintf(w, "%.3f", val)
 			return
 
 		case "counter":
@@ -55,7 +55,7 @@ func GetAllMetricsHandler(g *storage.Storage, c *storage.Storage) http.HandlerFu
 		for metricType, metricValues := range gauge {
 			html += fmt.Sprintf("<h1>%s</h1>", metricType)
 			for metricName, value := range metricValues {
-				html += fmt.Sprintf("<p>%s: %f</p>", metricName, value)
+				html += fmt.Sprintf("<p>%s: %.3f</p>", metricName, value)
 			}
 		}
 		for metricType, metricValues := range counter {
