@@ -1,61 +1,138 @@
-// agent_handler_test.go
+// server_handler_test.go
 package handlers
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
+	"github.com/go-chi/chi"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestSendMetric(t *testing.T) {
-	tests := []struct {
-		name           string
-		metricType     string
-		metricName     string
-		metricValue    string
-		expectedStatus int
-	}{
-		{
-			name:           "Send gauge metric",
-			metricType:     "gauge",
-			metricName:     "test",
-			metricValue:    "10.0",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "Send counter metric",
-			metricType:     "counter",
-			metricName:     "test",
-			metricValue:    "10",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "Send invalid metric type",
-			metricType:     "unknown",
-			metricName:     "test",
-			metricValue:    "10.0",
-			expectedStatus: http.StatusInternalServerError,
-		},
-	}
+func TestGetMetricValueHandler(t *testing.T) {
+	// Create a test storage
+	g := storage.NewGaugeStorage()
+	c := storage.NewCounterStorage()
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// Create a test server to mock the HTTP request
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(test.expectedStatus)
-			}))
-			defer ts.Close()
+	// Create a test router
+	r := chi.NewRouter()
+	Webhook(r, g, c)
 
-			// Update the URL in the SendMetric function to point to the test server
-			// url := fmt.Sprintf("%s/update/%s/%s/%s", ts.URL, test.metricType, test.metricName, test.metricValue)
+	// Create a test request
+	req, err := http.NewRequest("GET", "/value/gauge/test", nil)
+	assert.NoError(t, err)
 
-			// Call the SendMetric function
-			err := SendMetric(test.metricType, test.metricName, test.metricValue)
+	// Create a test response recorder
+	w := httptest.NewRecorder()
 
-			// Check if the error is nil
-			if err != nil {
-				t.Errorf("expected nil error, got %v", err)
-			}
-		})
-	}
+	// Serve the request
+	r.ServeHTTP(w, req)
+
+	// Check the response status code
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetAllMetricsHandler(t *testing.T) {
+	// Create a test storage
+	g := storage.NewGaugeStorage()
+	c := storage.NewCounterStorage()
+
+	// Create a test router
+	r := chi.NewRouter()
+	Webhook(r, g, c)
+
+	// Create a test request
+	req, err := http.NewRequest("GET", "/", nil)
+	assert.NoError(t, err)
+
+	// Create a test response recorder
+	w := httptest.NewRecorder()
+
+	// Serve the request
+	r.ServeHTTP(w, req)
+
+	// Check the response status code
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Check the response body
+}
+
+func TestUpdateHandler(t *testing.T) {
+	// Create a test storage
+	g := storage.NewGaugeStorage()
+	c := storage.NewCounterStorage()
+
+	// Create a test router
+	r := chi.NewRouter()
+	Webhook(r, g, c)
+
+	// Create a test request
+	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)
+	assert.NoError(t, err)
+
+	// Create a test response recorder
+	w := httptest.NewRecorder()
+
+	// Serve the request
+	r.ServeHTTP(w, req)
+
+	// Check the response status code
+	assert.Equal(t, http.StatusOK, w.Code)
+
+}
+
+func TestUpdateHandler_InvalidMetricType(t *testing.T) {
+	// Create a test storage
+	g := storage.NewGaugeStorage()
+	c := storage.NewCounterStorage()
+
+	// Create a test router
+	r := chi.NewRouter()
+	Webhook(r, g, c)
+
+	// Create a test request
+	req, err := http.NewRequest("POST", "/update/unknown/test/10.0", nil)
+	assert.NoError(t, err)
+
+	// Create a test response recorder
+	w := httptest.NewRecorder()
+
+	// Serve the request
+	r.ServeHTTP(w, req)
+
+	// Check the response status code
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+}
+
+func TestRun(t *testing.T) {
+	// Create a test storage
+	g := storage.NewGaugeStorage()
+	c := storage.NewCounterStorage()
+
+	// Create a test router
+	r := chi.NewRouter()
+	Webhook(r, g, c)
+
+	// Start the server
+	go func() {
+		err := Run(r, g, c)
+		assert.NoError(t, err)
+	}()
+	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)
+	assert.NoError(t, err)
+	// Create a test request
+	// req, err := http.NewRequest("GET", "/value/gauge/test", nil)
+	// assert.NoError(t, err)
+
+	// Create a test response recorder
+	w := httptest.NewRecorder()
+
+	// Serve the request
+	r.ServeHTTP(w, req)
+
+	// Check the response status code
+	assert.Equal(t, http.StatusOK, w.Code)
 }

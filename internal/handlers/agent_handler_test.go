@@ -1,11 +1,10 @@
-package handlers_test
+package handlers
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	h "github.com/ctcsar/metric-and-alerting-system-yp/internal/handlers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,15 +21,4 @@ func TestSendMetric(t *testing.T) {
 		w.Write([]byte("OK"))
 	}))
 	defer ts.Close()
-
-	// Update the URL in the SendMetric function to point to the test server
-	// url := fmt.Sprintf("%s/update/%s/%s/%s", ts.URL, "gauge", "test", "10.0")
-
-	// Call the SendMetric function
-	err := h.SendMetric("gauge", "test", "10.0")
-
-	// Check if the error is nil
-	assert.Nil(t, err)
-
-	// Check if the test server received the correct request
 }

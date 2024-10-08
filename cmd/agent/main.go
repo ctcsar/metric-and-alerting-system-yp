@@ -23,7 +23,7 @@ func main() {
 			handlers.SendMetric("counter", k, fmt.Sprintf("%d", v))
 		}
 
-		time.Sleep(12 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 
 }
