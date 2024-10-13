@@ -8,7 +8,7 @@ import (
 
 func TestStorage_NewGaugeStorage(t *testing.T) {
 	// Test that NewGaugeStorage returns a new Storage instance with an empty Gauge map
-	m := NewGaugeStorage()
+	m := NewStorage()
 	assert.NotNil(t, m)
 	assert.Empty(t, m.Gauge)
 }

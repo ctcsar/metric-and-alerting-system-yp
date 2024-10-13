@@ -18,7 +18,8 @@ func TestSendMetric(t *testing.T) {
 
 		// Write a response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, err := w.Write([]byte("OK"))
+		assert.NoError(t, err)
 	}))
 	defer ts.Close()
 }

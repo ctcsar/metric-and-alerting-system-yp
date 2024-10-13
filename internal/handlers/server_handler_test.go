@@ -13,12 +13,10 @@ import (
 
 func TestGetMetricValueHandler(t *testing.T) {
 	// Create a test storage
-	g := storage.NewGaugeStorage()
-	c := storage.NewCounterStorage()
-
+	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Webhook(r, g, c)
+	Routers(r, m)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/value/gauge/test", nil)
@@ -36,12 +34,10 @@ func TestGetMetricValueHandler(t *testing.T) {
 
 func TestGetAllMetricsHandler(t *testing.T) {
 	// Create a test storage
-	g := storage.NewGaugeStorage()
-	c := storage.NewCounterStorage()
-
+	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Webhook(r, g, c)
+	Routers(r, m)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/", nil)
@@ -61,12 +57,10 @@ func TestGetAllMetricsHandler(t *testing.T) {
 
 func TestUpdateHandler(t *testing.T) {
 	// Create a test storage
-	g := storage.NewGaugeStorage()
-	c := storage.NewCounterStorage()
-
+	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Webhook(r, g, c)
+	Routers(r, m)
 
 	// Create a test request
 	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)
@@ -85,12 +79,10 @@ func TestUpdateHandler(t *testing.T) {
 
 func TestUpdateHandler_InvalidMetricType(t *testing.T) {
 	// Create a test storage
-	g := storage.NewGaugeStorage()
-	c := storage.NewCounterStorage()
-
+	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Webhook(r, g, c)
+	Routers(r, m)
 
 	// Create a test request
 	req, err := http.NewRequest("POST", "/update/unknown/test/10.0", nil)
@@ -109,17 +101,16 @@ func TestUpdateHandler_InvalidMetricType(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	// Create a test storage
-	g := storage.NewGaugeStorage()
-	c := storage.NewCounterStorage()
+	m := storage.NewStorage()
 	url := "localhost:8080"
 
 	// Create a test router
 	r := chi.NewRouter()
-	Webhook(r, g, c)
+	Routers(r, m)
 
 	// Start the server
 	go func() {
-		err := Run(url, r, g, c)
+		err := Run(url, r, m)
 		assert.NoError(t, err)
 	}()
 	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)

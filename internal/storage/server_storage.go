@@ -9,14 +9,9 @@ type Storage struct {
 	Counter map[string]int64
 }
 
-func NewGaugeStorage() *Storage {
+func NewStorage() *Storage {
 	return &Storage{
-		Gauge: make(map[string]float64),
-	}
-}
-
-func NewCounterStorage() *Storage {
-	return &Storage{
+		Gauge:   make(map[string]float64),
 		Counter: make(map[string]int64),
 	}
 }

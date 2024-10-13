@@ -1,18 +1,25 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/flags"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/handlers"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
 	"github.com/go-chi/chi"
 )
 
 func main() {
-	ParseFlags()
-	g := storage.NewGaugeStorage()
-	c := storage.NewCounterStorage()
-	r := chi.NewRouter()
+	metrics := storage.NewStorage()
+	handler := chi.NewRouter()
+	flags.SetServerFlags()
+	flag.Parse()
+
 	//Запускем сервер
-	if err := handlers.Run(flagRunAddr, r, g, c); err != nil {
-		panic(err)
+	if err := handlers.Run(flags.GetServerUrl(), handler, metrics); err != nil {
+		fmt.Println(err)
+		return
 	}
+
 }

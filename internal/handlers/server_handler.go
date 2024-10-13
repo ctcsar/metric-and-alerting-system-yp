@@ -11,46 +11,51 @@ import (
 
 type Handler struct {
 	http.Handler
-	GaugeStorage   *storage.Storage
-	CounterStorage *storage.Storage
+	MemStorage *storage.Storage
 }
 
-func GetMetricValueHandler(g *storage.Storage, c *storage.Storage) http.HandlerFunc {
+func GetMetricValueHandler(metrics *storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		h := Handler{GaugeStorage: g, CounterStorage: c}
+		h := Handler{MemStorage: metrics}
 		metricType := chi.URLParam(r, "type")
 		metricName := chi.URLParam(r, "name")
 
 		switch metricType {
 		case "gauge":
-			val, ok := h.GaugeStorage.GetGaugeValue(metricName)
+			val, ok := h.MemStorage.GetGaugeValue(metricName)
 			if !ok {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
-			fmt.Fprintf(w, "%g", val)
-			return
-
+			_, err := w.Write([]byte(fmt.Sprintf("%g", val)))
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 		case "counter":
-			val, ok := h.CounterStorage.GetCounterValue(metricName)
+			val, ok := h.MemStorage.GetCounterValue(metricName)
 			if !ok {
 				w.WriteHeader(http.StatusNotFound)
+				return
 			}
-			fmt.Fprintf(w, "%d", val)
-			return
+			_, err := w.Write([]byte(fmt.Sprintf("%d", val)))
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 		default:
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 	}
 }
 
-func GetAllMetricsHandler(g *storage.Storage, c *storage.Storage) http.HandlerFunc {
+func GetAllMetricsHandler(metrics *storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		h := Handler{GaugeStorage: g, CounterStorage: c}
-		gauge := h.GaugeStorage.GetAllGaugeMetrics()
-		counter := h.CounterStorage.GetAllCounterMetrics()
+		h := Handler{MemStorage: metrics}
+		gauge := h.MemStorage.GetAllGaugeMetrics()
+		counter := h.MemStorage.GetAllCounterMetrics()
 		html := "<html><body>"
 		for metricType, metricValues := range gauge {
 			html += fmt.Sprintf("<h1>%s</h1>", metricType)
@@ -65,14 +70,17 @@ func GetAllMetricsHandler(g *storage.Storage, c *storage.Storage) http.HandlerFu
 			}
 		}
 		html += "</body></html>"
-		w.Write([]byte(html))
+		_, err := w.Write([]byte(html))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }
 
-func UpdateHandler(r chi.Router, g *storage.Storage, c *storage.Storage) http.HandlerFunc {
+func UpdateHandler(handler chi.Router, metrics *storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		h := Handler{GaugeStorage: g, CounterStorage: c}
+		h := Handler{MemStorage: metrics}
 
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -97,26 +105,34 @@ func UpdateHandler(r chi.Router, g *storage.Storage, c *storage.Storage) http.Ha
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			h.GaugeStorage.SetGauge(name, val)
+			err = h.MemStorage.SetGauge(name, val)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 		} else if metricType == "counter" {
 			val, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			h.CounterStorage.SetCounter(name, val)
+			err = h.MemStorage.SetCounter(name, val)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 		}
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-func Webhook(r chi.Router, g *storage.Storage, c *storage.Storage) {
-	r.Get("/value/{type}/{name}", GetMetricValueHandler(g, c))
-	r.Get("/", GetAllMetricsHandler(g, c))
-	r.Post("/update/{type}/{name}/{value}", UpdateHandler(r, g, c))
+func Routers(handler chi.Router, metrics *storage.Storage) {
+	handler.Get("/value/{type}/{name}", GetMetricValueHandler(metrics))
+	handler.Get("/", GetAllMetricsHandler(metrics))
+	handler.Post("/update/{type}/{name}/{value}", UpdateHandler(handler, metrics))
 }
 
-func Run(url string, r chi.Router, g *storage.Storage, c *storage.Storage) error {
-	Webhook(r, g, c)
-	return http.ListenAndServe(url, r)
+func Run(url string, handler chi.Router, metrics *storage.Storage) error {
+	Routers(handler, metrics)
+	return http.ListenAndServe(url, handler)
 }

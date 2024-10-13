@@ -64,13 +64,13 @@ func (m *MemStorage) SetCounter(count int64) {
 	}
 }
 
-func (m *MemStorage) GetMetrics(t int) MemStorage {
+func (m *MemStorage) GetMetrics(duratiomTime time.Duration) MemStorage {
 	var counter int64 = 0
 	for {
 		RandomValue := rand.Float64()
 		m.SetStorage(RandomValue)
 		m.SetCounter(counter)
-		time.Sleep(time.Duration(t) * time.Second)
+		time.Sleep(duratiomTime * time.Second)
 		counter++
 	}
 }
