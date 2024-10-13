@@ -17,7 +17,7 @@ func main() {
 	flag.Parse()
 
 	//Запускем сервер
-	if err := handlers.Run(flags.GetServerUrl(), handler, metrics); err != nil {
+	if err := handlers.Run(flags.GetServerURL(), handler, metrics); err != nil {
 		fmt.Println(err)
 		return
 	}
