@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -23,14 +22,10 @@ func main() {
 	flag.Parse()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	err := memStorage.GetMetrics(flags.GetMetricsGetDuration())
-	if err != nil {
-		fmt.Println(err)
-	}
+	go memStorage.GetMetrics(flags.GetMetricsGetDuration())
 	for {
 		select {
 		case <-c:
-			log.Println("Shutting down sending metrics")
 			return
 		case <-time.After(flags.GetSendDuration() * time.Second):
 			metrics := memStorage.Metrics

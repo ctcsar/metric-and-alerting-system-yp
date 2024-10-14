@@ -65,15 +65,14 @@ func (m *MemStorage) SetCounter(count int64) {
 	}
 }
 
-func (m *MemStorage) GetMetrics(duratiomTime time.Duration) error {
+func (m *MemStorage) GetMetrics(duratiomTime time.Duration) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	var counter int64 = 0
 	for {
 		select {
 		case <-c:
-			err := fmt.Errorf("shutting down getting metrics")
-			return err
+			return
 		case <-time.After(duratiomTime * time.Second):
 			RandomValue := rand.Float64()
 			m.SetStorage(RandomValue)

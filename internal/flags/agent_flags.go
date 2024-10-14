@@ -8,7 +8,7 @@ import (
 )
 
 type agentFlags struct {
-	Url           string
+	URL           string
 	SendTime      int
 	GetMetricTime int
 }
@@ -17,12 +17,12 @@ func NewFlags() *agentFlags {
 	return &agentFlags{}
 }
 func (f *agentFlags) SetAgentFlags() {
-	flag.StringVar(&f.Url, "a", "localhost:8080", "address and port to run server")
+	flag.StringVar(&f.URL, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&f.SendTime, "r", 10, "time in seconds to send metrics")
 	flag.IntVar(&f.GetMetricTime, "p", 2, "time in seconds to get metrics")
 }
 func (f agentFlags) GetURLForSend() string {
-	urlSend := f.Url
+	urlSend := f.URL
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		urlSend = envRunAddr
 	}
