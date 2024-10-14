@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
 	"github.com/go-chi/chi"
@@ -100,25 +99,15 @@ func UpdateHandler(handler chi.Router, metrics *storage.Storage) http.HandlerFun
 		}
 
 		if metricType == "gauge" {
-			val, err := strconv.ParseFloat(value, 64)
+			err := h.MemStorage.SetGauge(name, value)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			err = h.MemStorage.SetGauge(name, val)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 		} else if metricType == "counter" {
-			val, err := strconv.ParseInt(value, 10, 64)
+			err := h.MemStorage.SetCounter(name, value)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			err = h.MemStorage.SetCounter(name, val)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 		}

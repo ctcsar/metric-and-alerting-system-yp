@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const Gauge = "gauge"
+
 func TestStorage_NewGaugeStorage(t *testing.T) {
 	// Test that NewGaugeStorage returns a new Storage instance with an empty Gauge map
 	m := NewStorage()
@@ -25,7 +27,7 @@ func TestStorage_GetAllGaugeMetrics(t *testing.T) {
 	// Test that GetAllGaugeMetrics returns all gauge metrics
 	metrics := m.GetAllGaugeMetrics()
 	assert.Equal(t, map[string]map[string]float64{
-		"gauge": {
+		Gauge: {
 			"test1": 10.0,
 			"test2": 20.0,
 		},
@@ -39,7 +41,7 @@ func TestStorage_SetGauge(t *testing.T) {
 	}
 
 	// Test that SetGauge sets the expected value for a gauge metric
-	err := m.SetGauge("test", 10.0)
+	err := m.SetGauge("test", "10.0")
 	assert.Nil(t, err)
 	assert.Equal(t, 10.0, m.Gauge["test"])
 }
@@ -51,7 +53,7 @@ func TestStorage_SetCounter(t *testing.T) {
 	}
 
 	// Test that SetCounter sets the expected value for a counter metric
-	err := m.SetCounter("test", 10)
+	err := m.SetCounter("test", "10")
 	assert.Nil(t, err)
 	assert.Equal(t, int64(10), m.Counter["test"])
 }

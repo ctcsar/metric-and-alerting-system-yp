@@ -3,6 +3,8 @@ package storage
 import (
 	"fmt"
 	"math/rand/v2"
+	"os"
+	"os/signal"
 	"runtime"
 	"time"
 )
@@ -17,7 +19,6 @@ type Metrics struct {
 }
 
 func (m *MemStorage) String() string {
-	// implement the string representation of MemStorage
 	return fmt.Sprintf("MemStorage{Metrics: %+v}", m.Metrics)
 }
 func (m *MemStorage) SetStorage(rand float64) {
@@ -64,13 +65,21 @@ func (m *MemStorage) SetCounter(count int64) {
 	}
 }
 
-func (m *MemStorage) GetMetrics(duratiomTime time.Duration) MemStorage {
+func (m *MemStorage) GetMetrics(duratiomTime time.Duration) error {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
 	var counter int64 = 0
 	for {
-		RandomValue := rand.Float64()
-		m.SetStorage(RandomValue)
-		m.SetCounter(counter)
-		time.Sleep(duratiomTime * time.Second)
-		counter++
+		select {
+		case <-c:
+			err := fmt.Errorf("shutting down getting metrics")
+			return err
+		case <-time.After(duratiomTime * time.Second):
+			RandomValue := rand.Float64()
+			m.SetStorage(RandomValue)
+			m.SetCounter(counter)
+			time.Sleep(duratiomTime * time.Second)
+			counter++
+		}
 	}
 }

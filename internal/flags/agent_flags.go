@@ -7,17 +7,22 @@ import (
 	"time"
 )
 
-var urlSend string
-var sendTime int
-var getMetricsGetDuration int
-
-func SetAgentFlags() {
-
-	flag.StringVar(&urlSend, "a", "localhost:8080", "address and port to run server")
-	flag.IntVar(&sendTime, "r", 10, "time in seconds to send metrics")
-	flag.IntVar(&getMetricsGetDuration, "p", 2, "time in seconds to get metrics")
+type agentFlags struct {
+	Url           string
+	SendTime      int
+	GetMetricTime int
 }
-func GetURLForSend() string {
+
+func NewFlags() *agentFlags {
+	return &agentFlags{}
+}
+func (f *agentFlags) SetAgentFlags() {
+	flag.StringVar(&f.Url, "a", "localhost:8080", "address and port to run server")
+	flag.IntVar(&f.SendTime, "r", 10, "time in seconds to send metrics")
+	flag.IntVar(&f.GetMetricTime, "p", 2, "time in seconds to get metrics")
+}
+func (f agentFlags) GetURLForSend() string {
+	urlSend := f.Url
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		urlSend = envRunAddr
 	}
@@ -25,14 +30,16 @@ func GetURLForSend() string {
 
 }
 
-func GetSendDuration() time.Duration {
+func (f agentFlags) GetSendDuration() time.Duration {
+	sendTime := f.SendTime
 	if envGetTime := os.Getenv("REPORT_INTERVAL"); envGetTime != "" {
 		sendTime, _ = strconv.Atoi(envGetTime)
 	}
 	return time.Duration(sendTime)
 }
 
-func GetMetricsGetDuration() time.Duration {
+func (f agentFlags) GetMetricsGetDuration() time.Duration {
+	getMetricsGetDuration := f.GetMetricTime
 	if envGetTime := os.Getenv("POLL_INTERVAL"); envGetTime != "" {
 		getMetricsGetDuration, _ = strconv.Atoi(envGetTime)
 	}
