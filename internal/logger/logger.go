@@ -47,7 +47,7 @@ func RequestLogger(h chi.Router) chi.Router {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			responseData := &responseData{
-				status: 200,
+				status: 0,
 				size:   0,
 			}
 			lw := loggingResponseWriter{
