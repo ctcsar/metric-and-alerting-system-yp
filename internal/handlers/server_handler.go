@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
 	"github.com/go-chi/chi"
+	"go.uber.org/zap"
+
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
 )
 
 type Handler struct {
@@ -76,52 +79,52 @@ func GetAllMetricsHandler(metrics *storage.Storage) http.HandlerFunc {
 	}
 }
 
-func UpdateHandler(handler chi.Router, metrics *storage.Storage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		h := Handler{MemStorage: metrics}
+func (h Handler) UpdateHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		name := chi.URLParam(r, "name")
-		metricType := chi.URLParam(r, "type")
-		value := chi.URLParam(r, "value")
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	name := chi.URLParam(r, "name")
+	metricType := chi.URLParam(r, "type")
+	value := chi.URLParam(r, "value")
 
-		if name == "none" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if metricType != "gauge" && metricType != "counter" || value == "none" {
+	if name == "none" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if metricType != "gauge" && metricType != "counter" || value == "none" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if metricType == "gauge" {
+		err := h.MemStorage.SetGauge(name, value)
+		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-
-		if metricType == "gauge" {
-			err := h.MemStorage.SetGauge(name, value)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-		} else if metricType == "counter" {
-			err := h.MemStorage.SetCounter(name, value)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
+	} else if metricType == "counter" {
+		err := h.MemStorage.SetCounter(name, value)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
-		w.WriteHeader(http.StatusOK)
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func Routers(handler chi.Router, metrics *storage.Storage) {
+	h := Handler{MemStorage: metrics}
 	handler.Get("/value/{type}/{name}", GetMetricValueHandler(metrics))
 	handler.Get("/", GetAllMetricsHandler(metrics))
-	handler.Post("/update/{type}/{name}/{value}", UpdateHandler(handler, metrics))
+	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
 }
 
 func Run(url string, handler chi.Router, metrics *storage.Storage) error {
+	logger.Log.Info("starting server", zap.String("url", url))
+	handler = logger.RequestLogger(handler)
 	Routers(handler, metrics)
 	return http.ListenAndServe(url, handler)
 }
