@@ -10,14 +10,6 @@ import (
 
 var Log *zap.Logger
 
-func init() {
-	Log, _ = zap.NewDevelopment()
-	config := zap.NewDevelopmentConfig()
-	config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	Log, _ = config.Build()
-
-}
-
 type (
 	responseData struct {
 		status int
@@ -29,6 +21,14 @@ type (
 		responseData *responseData
 	}
 )
+
+func init() {
+	Log, _ = zap.NewDevelopment()
+	config := zap.NewDevelopmentConfig()
+	config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	Log, _ = config.Build()
+
+}
 
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
