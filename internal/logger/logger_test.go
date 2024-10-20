@@ -25,7 +25,6 @@ func TestRequestLogger(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 page not found"))
 	}))
 	handler := RequestLogger(r)
 
@@ -69,7 +68,6 @@ func TestRequestLogger_LogsRequest(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Test response"))
 	}))
 	handler := RequestLogger(r)
 
