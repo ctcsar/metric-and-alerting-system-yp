@@ -11,7 +11,7 @@ import (
 const updateURLFormat = "http://%s/update/"
 
 type sendMetrics struct {
-	Id    string   `json:"id"`
+	ID    string   `json:"id"`
 	MType string   `json:"type"`
 	Value *float64 `json:"value"`
 	Delta *int64   `json:"delta"`
@@ -20,7 +20,7 @@ type sendMetrics struct {
 func SendMetric(sendURL string, metricType string, metricName string, metricValue string) error {
 	var req sendMetrics
 
-	req.Id = metricName
+	req.ID = metricName
 	req.MType = metricType
 	if metricType == "counter" {
 		val, err := strconv.ParseInt(metricValue, 10, 64)
