@@ -13,8 +13,8 @@ const updateURLFormat = "http://%s/update/"
 type sendMetrics struct {
 	ID    string   `json:"id"`
 	MType string   `json:"type"`
-	Value *float64 `json:"value"`
-	Delta *int64   `json:"delta"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
 }
 
 func SendMetric(sendURL string, metricType string, metricName string, metricValue string) error {
