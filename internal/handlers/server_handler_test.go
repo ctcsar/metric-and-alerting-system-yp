@@ -18,6 +18,9 @@ func TestGetMetricValueHandler(t *testing.T) {
 	r := chi.NewRouter()
 	Routers(r, m)
 
+	// Add a test metric value to the storage
+	m.Gauge["test"] = 10.5
+
 	// Create a test request
 	req, err := http.NewRequest("GET", "/value/gauge/test", nil)
 	assert.NoError(t, err)
@@ -29,7 +32,7 @@ func TestGetMetricValueHandler(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	// Check the response status code
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestGetAllMetricsHandler(t *testing.T) {

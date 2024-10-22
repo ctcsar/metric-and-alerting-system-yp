@@ -8,6 +8,8 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+const updateURLFormat = "http://%s/update"
+
 type sendMetrics struct {
 	Id    string   `json:"id"`
 	MType string   `json:"type"`
@@ -33,7 +35,7 @@ func SendMetric(sendURL string, metricType string, metricName string, metricValu
 		}
 		req.Value = &val
 	}
-	url := fmt.Sprintf("http://" + sendURL + "/update")
+	url := fmt.Sprintf(updateURLFormat, sendURL)
 
 	jsonReq, _ := json.Marshal(req)
 
