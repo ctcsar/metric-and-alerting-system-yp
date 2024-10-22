@@ -55,9 +55,6 @@ func GetMetricValueHandler(metrics *storage.Storage) http.HandlerFunc {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-		default:
-			w.WriteHeader(http.StatusNotFound)
-			return
 		}
 	}
 }
@@ -117,9 +114,6 @@ func GetJSONMetricValueHandler(metrics *storage.Storage) http.HandlerFunc {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-		default:
-			w.WriteHeader(http.StatusNotFound)
-			return
 		}
 	}
 
