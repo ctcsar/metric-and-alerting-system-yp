@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -11,6 +13,13 @@ import (
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
 )
 
+type Metrics struct {
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+}
+
 type Handler struct {
 	http.Handler
 	MemStorage *storage.Storage
@@ -18,33 +27,75 @@ type Handler struct {
 
 func GetMetricValueHandler(metrics *storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		var buff Metrics
+		rj := false
+		w.Header().Set("Content-Type", "application/json;")
 		h := Handler{MemStorage: metrics}
-		metricType := chi.URLParam(r, "type")
-		metricName := chi.URLParam(r, "name")
 
-		switch metricType {
+		if r.Body == http.NoBody {
+			buff.ID = chi.URLParam(r, "name")
+			buff.MType = chi.URLParam(r, "type")
+		} else {
+			rj = true
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&buff)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		}
+
+		switch buff.MType {
 		case "gauge":
-			val, ok := h.MemStorage.GetGaugeValue(metricName)
+			val, ok := h.MemStorage.GetGaugeValue(buff.ID)
 			if !ok {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
-			_, err := w.Write([]byte(fmt.Sprintf("%g", val)))
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
+			if rj {
+				resp := Metrics{
+					ID:    buff.ID,
+					MType: buff.MType,
+					Value: &val,
+				}
+				r, err := json.Marshal(resp)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				w.Write(r)
+			} else {
+				_, err := w.Write([]byte(fmt.Sprintf("%g", val)))
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+
+				}
 			}
 		case "counter":
-			val, ok := h.MemStorage.GetCounterValue(metricName)
+			val, ok := h.MemStorage.GetCounterValue(buff.ID)
 			if !ok {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
-			_, err := w.Write([]byte(fmt.Sprintf("%d", val)))
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
+			if rj {
+				resp := Metrics{
+					ID:    buff.ID,
+					MType: buff.MType,
+					Delta: &val,
+				}
+				r, err := json.Marshal(resp)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				w.Write(r)
+			} else {
+				_, err := w.Write([]byte(fmt.Sprintf("%d", val)))
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 			}
 		default:
 			w.WriteHeader(http.StatusNotFound)
@@ -80,33 +131,56 @@ func GetAllMetricsHandler(metrics *storage.Storage) http.HandlerFunc {
 }
 
 func (h Handler) UpdateHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json;")
+
+	var buff Metrics
 
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	name := chi.URLParam(r, "name")
-	metricType := chi.URLParam(r, "type")
-	value := chi.URLParam(r, "value")
-
-	if name == "none" {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	if metricType != "gauge" && metricType != "counter" || value == "none" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if metricType == "gauge" {
-		err := h.MemStorage.SetGauge(name, value)
+	if r.Body == http.NoBody {
+		buff.ID = chi.URLParam(r, "name")
+		buff.MType = chi.URLParam(r, "type")
+		if buff.MType == "counter" {
+			val, err := strconv.ParseInt(chi.URLParam(r, "value"), 10, 64)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			buff.Delta = &val
+		} else if buff.MType == "gauge" {
+			val, err := strconv.ParseFloat(chi.URLParam(r, "value"), 64)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			buff.Value = &val
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	} else {
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&buff)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-	} else if metricType == "counter" {
-		err := h.MemStorage.SetCounter(name, value)
+	}
+
+	if buff.ID == "none" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if buff.MType == "gauge" {
+		err := h.MemStorage.SetGauge(buff.ID, *buff.Value)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	} else if buff.MType == "counter" {
+		err := h.MemStorage.SetCounter(buff.ID, *buff.Delta)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -120,6 +194,8 @@ func Routers(handler chi.Router, metrics *storage.Storage) {
 	handler.Get("/value/{type}/{name}", GetMetricValueHandler(metrics))
 	handler.Get("/", GetAllMetricsHandler(metrics))
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
+	handler.Post("/update", h.UpdateHandler)
+	handler.Post("/value", GetMetricValueHandler(metrics))
 }
 
 func Run(url string, handler chi.Router, metrics *storage.Storage) error {

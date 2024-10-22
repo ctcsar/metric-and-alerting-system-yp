@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"strconv"
 )
 
 type Storage struct {
@@ -21,21 +20,13 @@ func (m *Storage) String() string {
 	return fmt.Sprintf("Storage{gauge: %+v, counter: %+v}", m.Gauge, m.Counter)
 }
 
-func (m *Storage) SetGauge(key string, val string) error {
-	value, err := strconv.ParseFloat(val, 64)
-	if err != nil {
-		return err
-	}
-	m.Gauge[key] = value
+func (m *Storage) SetGauge(key string, val float64) error {
+	m.Gauge[key] = val
 	return nil
 }
 
-func (m *Storage) SetCounter(key string, val string) error {
-	value, err := strconv.ParseInt(val, 10, 64)
-	if err != nil {
-		return err
-	}
-	m.Counter[key] = m.Counter[key] + value
+func (m *Storage) SetCounter(key string, val int64) error {
+	m.Counter[key] = m.Counter[key] + val
 	return nil
 }
 func (m *Storage) GetGaugeValue(metricName string) (float64, bool) {
