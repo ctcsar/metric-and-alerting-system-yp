@@ -62,7 +62,7 @@ func GetMetricValueHandler(metrics *storage.Storage) http.HandlerFunc {
 	}
 }
 
-func GetJsonMetricValueHandler(metrics *storage.Storage) http.HandlerFunc {
+func GetJSONMetricValueHandler(metrics *storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		h := Handler{MemStorage: metrics}
@@ -196,7 +196,7 @@ func (h Handler) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h Handler) JsonUpdateHandler(w http.ResponseWriter, r *http.Request) {
+func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json;")
 
 	var buff Metrics
@@ -233,8 +233,8 @@ func Routers(handler chi.Router, metrics *storage.Storage) {
 	handler.Get("/value/{type}/{name}", GetMetricValueHandler(metrics))
 	handler.Get("/", GetAllMetricsHandler(metrics))
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
-	handler.Post("/update", h.JsonUpdateHandler)
-	handler.Post("/value", GetJsonMetricValueHandler(metrics))
+	handler.Post("/update/", h.JSONUpdateHandler)
+	handler.Post("/value/", GetJSONMetricValueHandler(metrics))
 }
 
 func Run(url string, handler chi.Router, metrics *storage.Storage) error {

@@ -8,7 +8,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-const updateURLFormat = "http://%s/update"
+const updateURLFormat = "http://%s/update/"
 
 type sendMetrics struct {
 	Id    string   `json:"id"`
