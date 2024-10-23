@@ -199,6 +199,7 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&buff)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 	if buff.MType != "gauge" && buff.MType != "counter" {
@@ -210,12 +211,14 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		err = h.MemStorage.SetGauge(buff.ID, *buff.Value)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 	} else if buff.MType == "counter" {
 		err = h.MemStorage.SetCounter(buff.ID, *buff.Delta)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 	}

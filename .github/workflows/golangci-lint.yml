@@ -1,4 +1,10 @@
-name: golangci-lint
+linters:
+  enable-all: true
+  disable:
+    # Note: deprecated linters
+    - gomnd
+    - execinquery
+    - exportloopref
 on:
   push:
     branches:
