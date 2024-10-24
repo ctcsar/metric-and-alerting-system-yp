@@ -94,8 +94,7 @@ func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Reque
 	case "counter":
 		val, ok := h.MemStorage.GetCounterValue(buff.ID)
 		if !ok {
-			// w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("null"))
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		resp := Metrics{
@@ -203,6 +202,11 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	if buff.MType == "gauge" {
 		err = h.MemStorage.SetGauge(buff.ID, *buff.Value)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		err = h.MemStorage.SetCounter("Pollcounte", 1)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

@@ -3,6 +3,7 @@ package storage
 import (
 	"math/rand/v2"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -52,4 +53,27 @@ func TestMemStorage_SetCounter(t *testing.T) {
 	count := int64(10)
 	m.SetCounter(count)
 	assert.Equal(t, count, m.Metrics.Counter["PollCount"])
+}
+
+func TestGetMetrics(t *testing.T) {
+	// Create a test MemStorage instance
+	m := &MemStorage{}
+
+	// Create a test duration
+	duration := 1 * time.Second
+
+	// Start the GetMetrics goroutine
+	go m.GetMetrics(duration)
+
+	// Wait for a short period of time to allow the goroutine to run
+	time.Sleep(500 * time.Millisecond)
+
+	// Check that the storage has been updated
+	assert.NotNil(t, m.Metrics.Gauge["RandomValue"])
+
+	// Wait for the goroutine to exit
+	time.Sleep(500 * time.Millisecond)
+
+	// Check that the goroutine has exited
+	assert.Equal(t, int64(0), m.Metrics.Counter["PollCount"])
 }
