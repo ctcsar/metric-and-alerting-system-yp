@@ -169,11 +169,6 @@ func (h Handler) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		err = h.MemStorage.SetCounter("Pollcounte", 1)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
 	} else if metricType == "counter" {
 		val, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
@@ -207,11 +202,6 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	if buff.MType == "gauge" {
 		err = h.MemStorage.SetGauge(buff.ID, *buff.Value)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		err = h.MemStorage.SetCounter("Pollcounte", 1)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

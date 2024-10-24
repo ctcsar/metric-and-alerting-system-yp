@@ -27,7 +27,6 @@ func (m *Storage) SetGauge(key string, val float64) error {
 
 func (m *Storage) SetCounter(key string, val int64) error {
 	m.Counter[key] = m.Counter[key] + val
-	fmt.Println(m.Counter)
 	return nil
 }
 func (m *Storage) GetGaugeValue(metricName string) (float64, bool) {
