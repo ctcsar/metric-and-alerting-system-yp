@@ -95,7 +95,6 @@ func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Reque
 		val, ok := h.MemStorage.GetCounterValue(buff.ID)
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
-			return
 		}
 		resp := Metrics{
 			ID:    buff.ID,
