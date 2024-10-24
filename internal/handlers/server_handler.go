@@ -60,7 +60,7 @@ func (h *Handler) GetMetricValueHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json")
 	var buff Metrics
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&buff)
@@ -95,6 +95,7 @@ func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Reque
 		val, ok := h.MemStorage.GetCounterValue(buff.ID)
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 		resp := Metrics{
 			ID:    buff.ID,
@@ -184,7 +185,7 @@ func (h Handler) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json;")
+	w.Header().Set("Content-Type", "application/json")
 
 	var buff Metrics
 
