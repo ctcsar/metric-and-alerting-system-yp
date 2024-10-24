@@ -102,12 +102,12 @@ func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Reque
 			MType: buff.MType,
 			Delta: &val,
 		}
-		value, err := json.Marshal(resp)
+		r, err := json.Marshal(resp)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		_, err = w.Write(value)
+		_, err = w.Write(r)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -213,7 +213,6 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 func Routers(handler chi.Router, metrics *storage.Storage) {
