@@ -212,7 +212,6 @@ func TestGetCounterMetricValueJsonHandler(t *testing.T) {
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
-	assert.Equal(t, http.StatusNotFound, w.Code)
 	// // Serve the request
 	h.GetJSONMetricValueHandler(w, resp)
 
