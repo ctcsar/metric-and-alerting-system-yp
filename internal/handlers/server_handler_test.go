@@ -83,6 +83,7 @@ func TestUpdateCounterHandlerWithJSON(t *testing.T) {
 	// Create a test request
 	req, err := http.NewRequest("POST", "/update/", bytes.NewBufferString(`{"id":"test","type":"counter","delta":10}`))
 	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
 
 	// Create a test response recorder
 	w := httptest.NewRecorder()
@@ -211,7 +212,8 @@ func TestGetCounterMetricValueJsonHandler(t *testing.T) {
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
-	// Serve the request
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	// // Serve the request
 	h.GetJSONMetricValueHandler(w, resp)
 
 	assert.NoError(t, err)

@@ -56,12 +56,15 @@ func (h *Handler) GetMetricValueHandler(w http.ResponseWriter, r *http.Request) 
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 }
 
 func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var buff *Metrics
+	var buff Metrics
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&buff)
 	if err != nil {
@@ -112,6 +115,9 @@ func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Reque
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 }
