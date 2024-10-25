@@ -90,6 +90,8 @@ func TestUpdateCounterHandlerWithJSON(t *testing.T) {
 
 	h.JSONUpdateHandler(w, req)
 
+	defer req.Body.Close()
+
 	// Check the response status code
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -109,6 +111,7 @@ func TestUpdateNextCounterHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	h.JSONUpdateHandler(w, req)
+	defer req.Body.Close()
 
 	// Check the response status code
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -193,6 +196,7 @@ func TestGetGaugeMetricValueJsonHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	// Serve the request
 	h.GetJSONMetricValueHandler(w, resp)
+	defer resp.Body.Close()
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -214,6 +218,7 @@ func TestGetCounterMetricValueJsonHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	// // Serve the request
 	h.GetJSONMetricValueHandler(w, resp)
+	defer resp.Body.Close()
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, w.Code)
