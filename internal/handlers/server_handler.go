@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -195,25 +194,14 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var buff Metrics
+	var resp Metrics
 
-	// decoder := json.NewDecoder(r.Body)
-	// err := decoder.Decode(&buff)
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	return
-	// }
-	body, err := io.ReadAll(r.Body)
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&buff)
 	if err != nil {
-		http.Error(w, "error reading request body", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	err = json.Unmarshal(body, &buff)
-	if err != nil {
-		http.Error(w, "invalid JSON input", http.StatusBadRequest)
-		return
-	}
-
 	if buff.MType != "gauge" && buff.MType != "counter" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -225,10 +213,51 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		val, ok := h.MemStorage.GetGaugeValue(buff.ID)
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		resp = Metrics{
+			ID:    buff.ID,
+			MType: buff.MType,
+			Value: &val,
+		}
+		r, err := json.Marshal(resp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(r)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 	} else if buff.MType == "counter" {
 		err = h.MemStorage.SetCounter(buff.ID, *buff.Delta)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		val, ok := h.MemStorage.GetCounterValue(buff.ID)
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		resp = Metrics{
+			ID:    buff.ID,
+			MType: buff.MType,
+			Delta: &val,
+		}
+		r, err := json.Marshal(resp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(r)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
