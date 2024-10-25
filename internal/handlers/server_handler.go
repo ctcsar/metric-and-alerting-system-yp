@@ -196,20 +196,24 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	var buff Metrics
 
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&buff)
+	// decoder := json.NewDecoder(r.Body)
+	// err := decoder.Decode(&buff)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	return
+	// }
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		if err == io.EOF {
-			http.Error(w, "Invalid JSON input", http.StatusBadRequest)
-			return
-		}
-		http.Error(w, "Failed to decode JSON input", http.StatusInternalServerError)
+		http.Error(w, "error reading request body", http.StatusBadRequest)
 		return
 	}
-	if r.ContentLength == 0 {
-		http.Error(w, "Empty request body", http.StatusBadRequest)
+
+	err = json.Unmarshal(body, &buff)
+	if err != nil {
+		http.Error(w, "invalid JSON input", http.StatusBadRequest)
 		return
 	}
+
 	if buff.MType != "gauge" && buff.MType != "counter" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
