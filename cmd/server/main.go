@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/compress"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/flags"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/handlers"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
@@ -14,6 +15,7 @@ import (
 func main() {
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
+	handler.Use(compress.GzipMiddleware)
 	flags.SetServerFlags()
 	flag.Parse()
 
