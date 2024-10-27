@@ -123,6 +123,7 @@ func (h *Handler) GetJSONMetricValueHandler(w http.ResponseWriter, r *http.Reque
 
 }
 func (h *Handler) GetAllMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	gauge := h.MemStorage.GetAllGaugeMetrics()
 	counter := h.MemStorage.GetAllCounterMetrics()
 	html := "<html><body>"
