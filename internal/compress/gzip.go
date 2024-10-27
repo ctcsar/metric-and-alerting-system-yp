@@ -70,7 +70,7 @@ func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
 
-		contentType := r.Header.Get("Content-Type")
+		contentType := r.Header.Get("Accept")
 		isHTML := strings.Contains(contentType, "text/html")
 		isJSON := strings.Contains(contentType, "application/json")
 
