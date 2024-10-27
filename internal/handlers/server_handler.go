@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/compress"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
 )
@@ -276,5 +277,5 @@ func Run(url string, handler chi.Router, metrics *storage.Storage) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
 	Routers(handler, metrics)
-	return http.ListenAndServe(url, handler)
+	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }

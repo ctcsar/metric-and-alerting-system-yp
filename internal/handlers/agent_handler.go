@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/go-resty/resty/v2"
@@ -36,12 +39,38 @@ func SendMetric(sendURL string, metricType string, metricName string, metricValu
 		req.Value = &val
 	}
 	url := fmt.Sprintf(updateURLFormat, sendURL)
-
-	jsonReq, _ := json.Marshal(req)
-
-	_, err := resty.New().R().SetHeader("Content-Type", "application/json").SetBody(jsonReq).Post(url)
+	jsonReq, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
+
+	// Compress the request body using gzip
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	_, err = gz.Write(jsonReq)
+	if err != nil {
+		return err
+	}
+	err = gz.Close()
+	if err != nil {
+		return err
+	}
+
+	client := resty.New()
+
+	// Set the request body and header
+	resp, err := client.R().
+		SetBody(buf.Bytes()).
+		SetHeader("Content-Encoding", "gzip").
+		Post(url)
+
+	// Check the response status code
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode())
+	}
+
 	return nil
 }
