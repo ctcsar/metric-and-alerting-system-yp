@@ -15,7 +15,7 @@ import (
 
 func TestMainWithValidFlags(t *testing.T) {
 	// Set up valid flags
-	f := flags.NewFlags()
+	f := flags.NewAgentFlags()
 	f.URL = "localhost:8080"
 	f.SendTime = 10
 	f.GetMetricTime = 2
@@ -26,7 +26,7 @@ func TestMainWithValidFlags(t *testing.T) {
 
 func TestMainWithInvalidFlags(t *testing.T) {
 	// Set up invalid flags
-	f := flags.NewFlags()
+	f := flags.NewAgentFlags()
 	f.URL = ""          // invalid URL
 	f.SendTime = 0      // invalid send time
 	f.GetMetricTime = 0 // invalid get metric time
@@ -65,7 +65,7 @@ func TestMainWithEmptyFlags(t *testing.T) {
 
 func TestGetMetrics(t *testing.T) {
 	// Set up valid flags
-	f := flags.NewFlags()
+	f := flags.NewAgentFlags()
 	f.URL = "localhost:8080"
 	f.SendTime = 10
 	f.GetMetricTime = 2
@@ -85,7 +85,7 @@ func TestGetMetrics(t *testing.T) {
 
 func TestSignalHandling(t *testing.T) {
 	// Set up valid flags
-	f := flags.NewFlags()
+	f := flags.NewAgentFlags()
 	f.URL = "localhost:8080"
 	f.SendTime = 10
 	f.GetMetricTime = 2

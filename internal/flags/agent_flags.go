@@ -13,7 +13,7 @@ type agentFlags struct {
 	GetMetricTime int
 }
 
-func NewFlags() *agentFlags {
+func NewAgentFlags() *agentFlags {
 	return &agentFlags{}
 }
 func (f *agentFlags) SetAgentFlags() {
@@ -31,17 +31,15 @@ func (f agentFlags) GetURLForSend() string {
 }
 
 func (f agentFlags) GetSendDuration() time.Duration {
-	sendTime := f.SendTime
 	if envGetTime := os.Getenv("REPORT_INTERVAL"); envGetTime != "" {
-		sendTime, _ = strconv.Atoi(envGetTime)
+		f.SendTime, _ = strconv.Atoi(envGetTime)
 	}
-	return time.Duration(sendTime)
+	return time.Duration(f.SendTime)
 }
 
 func (f agentFlags) GetMetricsGetDuration() time.Duration {
-	getMetricsGetDuration := f.GetMetricTime
 	if envGetTime := os.Getenv("POLL_INTERVAL"); envGetTime != "" {
-		getMetricsGetDuration, _ = strconv.Atoi(envGetTime)
+		f.GetMetricTime, _ = strconv.Atoi(envGetTime)
 	}
-	return time.Duration(getMetricsGetDuration)
+	return time.Duration(f.GetMetricTime)
 }

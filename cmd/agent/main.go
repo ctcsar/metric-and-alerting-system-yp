@@ -16,7 +16,7 @@ const GaugeMetricsType = "gauge"
 const CounterMetricsType = "counter"
 
 func main() {
-	flags := f.NewFlags()
+	flags := f.NewAgentFlags()
 	memStorage := storage.MemStorage{}
 	flags.SetAgentFlags()
 	flag.Parse()
