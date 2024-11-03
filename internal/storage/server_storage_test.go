@@ -70,3 +70,41 @@ func TestStorage_IncrementCounter(t *testing.T) {
 	m.Counter["test"]++
 	assert.Equal(t, int64(11), m.Counter["test"])
 }
+
+func TestStorage_SetStorage(t *testing.T) {
+	type fields struct {
+		Gauge   map[string]float64
+		Counter map[string]int64
+	}
+	type args struct {
+		metrics *Storage
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "SetStorage",
+			fields: fields{
+				Gauge:   map[string]float64{},
+				Counter: map[string]int64{},
+			},
+			args: args{
+				metrics: &Storage{
+					Gauge:   map[string]float64{"test": 10.0},
+					Counter: map[string]int64{"test": 10},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Storage{
+				Gauge:   tt.fields.Gauge,
+				Counter: tt.fields.Counter,
+			}
+			m.SetStorage(tt.args.metrics)
+		})
+	}
+}
