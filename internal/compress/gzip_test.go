@@ -72,7 +72,9 @@ func TestCompressWriter_Close(t *testing.T) {
 
 func TestGzipMiddleware(t *testing.T) {
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
+		if _, err := w.Write([]byte("Hello, World!")); err != nil {
+			t.Errorf("failed to write to response writer: %v", err)
+		}
 	})
 
 	w := httptest.NewRecorder()
@@ -87,7 +89,9 @@ func TestGzipMiddleware(t *testing.T) {
 
 func TestGzipMiddleware_NoGzip(t *testing.T) {
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
+		if _, err := w.Write([]byte("Hello, World!")); err != nil {
+			t.Errorf("failed to write to response writer: %v", err)
+		}
 	})
 
 	w := httptest.NewRecorder()

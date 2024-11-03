@@ -2,7 +2,6 @@ package files
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,7 +12,7 @@ import (
 
 func TestMyFile_WriteFile(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "test_myfile_writefile")
+	tempDir, err := os.MkdirTemp("", "test_myfile_writefile")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
