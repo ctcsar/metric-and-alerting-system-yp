@@ -24,4 +24,4 @@ vendor/
 .idea
 .vscode
 
-cmd/storage.txt
+cmd/server/storage.txt
