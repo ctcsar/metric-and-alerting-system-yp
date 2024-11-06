@@ -1,4 +1,4 @@
-package handlers
+package server
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/compress"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
 
 type Metrics struct {
@@ -166,7 +166,8 @@ func (h Handler) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if metricType == "gauge" {
+	switch metricType {
+	case "gauge":
 		val, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -177,7 +178,7 @@ func (h Handler) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-	} else if metricType == "counter" {
+	case "counter":
 		val, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -209,7 +210,9 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if buff.MType == "gauge" {
+	switch buff.MType {
+
+	case "gauge":
 		err = h.MemStorage.SetGauge(buff.ID, *buff.Value)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -236,7 +239,7 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	} else if buff.MType == "counter" {
+	case "counter":
 		err = h.MemStorage.SetCounter(buff.ID, *buff.Delta)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

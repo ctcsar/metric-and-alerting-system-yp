@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
 
 type MyFile struct {
@@ -18,7 +18,7 @@ func NewFile() *MyFile {
 	return &MyFile{}
 }
 
-func (f *MyFile) WriteFile(m *storage.Storage, filePath string) {
+func (f *MyFile) WriteFile(m *storage.Storage, filePath string) error {
 	f.Path = filePath
 	f.Content = m
 
@@ -27,25 +27,27 @@ func (f *MyFile) WriteFile(m *storage.Storage, filePath string) {
 	file, err := os.OpenFile(f.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
 
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	data, err := json.MarshalIndent(f.Content, "", "  ")
 
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	if _, err := file.Seek(0, 0); err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	if _, err := file.Write(data); err != nil {
-		fmt.Println(err)
+		return err
 	}
+
+	return nil
 
 }
 
-func (f *MyFile) ReadFromFile(filePath string, metrics *storage.Storage) {
+func (f *MyFile) ReadFromFile(filePath string, metrics *storage.Storage) error {
 
 	f.Path = filePath
 
@@ -57,11 +59,12 @@ func (f *MyFile) ReadFromFile(filePath string, metrics *storage.Storage) {
 
 	data, err := os.ReadFile(f.Path)
 	if err != nil {
-		return
+		return err
 	}
 
 	err = json.Unmarshal(data, metrics)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+	return nil
 }

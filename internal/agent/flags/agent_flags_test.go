@@ -1,4 +1,4 @@
-package flags
+package agent
 
 import (
 	"testing"
@@ -12,14 +12,14 @@ func TestAgentFlags(t *testing.T) {
 		f := &agentFlags{}
 		f.SetAgentFlags()
 
-		assert.Equal(t, "localhost:8080", f.URL)
-		assert.Equal(t, 10, f.SendTime)
-		assert.Equal(t, 2, f.GetMetricTime)
+		assert.Equal(t, "localhost:8080", f.url)
+		assert.Equal(t, 10, f.sendTime)
+		assert.Equal(t, 2, f.getMetricTime)
 	})
 
 	t.Run("GetURLForSend", func(t *testing.T) {
 		f := &agentFlags{
-			URL: "localhost:8080",
+			url: "localhost:8080",
 		}
 
 		assert.Equal(t, "localhost:8080", f.GetURLForSend())
@@ -27,7 +27,7 @@ func TestAgentFlags(t *testing.T) {
 
 	t.Run("GetSendDuration", func(t *testing.T) {
 		f := &agentFlags{
-			SendTime: 10,
+			sendTime: 10,
 		}
 
 		assert.Equal(t, time.Duration(10), f.GetSendDuration())
@@ -35,7 +35,7 @@ func TestAgentFlags(t *testing.T) {
 
 	t.Run("GetMetricsGetDuration", func(t *testing.T) {
 		f := &agentFlags{
-			GetMetricTime: 2,
+			getMetricTime: 2,
 		}
 
 		assert.Equal(t, time.Duration(2), f.GetMetricsGetDuration())

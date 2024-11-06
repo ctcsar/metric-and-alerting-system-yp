@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +29,8 @@ func TestMyFile_WriteFile(t *testing.T) {
 		Content: &storage.Storage{Gauge: map[string]float64{}, Counter: map[string]int64{}}}
 
 	// Test the WriteFile method
-	f.WriteFile(f.Content, f.Path)
+	err = f.WriteFile(f.Content, f.Path)
+	assert.NoError(t, err)
 
 	// Read the file content and compare it with the test content
 	fileContent, err := os.ReadFile(f.Path)
@@ -49,9 +50,10 @@ func TestMyFile_WriteFile_Error(t *testing.T) {
 		Content: &storage.Storage{Gauge: map[string]float64{}, Counter: map[string]int64{}}}
 
 	// Test the WriteFile method with an error
-	f.WriteFile(f.Content, f.Path)
+	err := f.WriteFile(f.Content, f.Path)
+	assert.Error(t, err)
 
 	// Check that the file was not created
-	_, err := os.Stat(f.Path)
+	_, err = os.Stat(f.Path)
 	assert.True(t, os.IsNotExist(err))
 }

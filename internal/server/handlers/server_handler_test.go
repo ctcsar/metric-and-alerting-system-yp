@@ -1,5 +1,5 @@
 // server_handler_test.go
-package handlers
+package server
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
 
 func TestGetMetricValueHandler(t *testing.T) {

@@ -1,4 +1,4 @@
-package handlers
+package agent
 
 import (
 	"bytes"
@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/go-resty/resty/v2"
 )
-
-const updateURLFormat = "http://%s/update/"
 
 type sendMetrics struct {
 	ID    string   `json:"id"`
@@ -25,20 +24,25 @@ func SendMetric(sendURL string, metricType string, metricName string, metricValu
 
 	req.ID = metricName
 	req.MType = metricType
-	if metricType == "counter" {
+	switch metricType {
+	case "counter":
 		val, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			return err
 		}
 		req.Delta = &val
-	} else if metricType == "gauge" {
+	case "gauge":
 		val, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			return err
 		}
 		req.Value = &val
 	}
-	url := fmt.Sprintf(updateURLFormat, sendURL)
+	url := url.URL{
+		Scheme: "http",
+		Host:   sendURL,
+		Path:   "/update/",
+	}
 	jsonReq, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -62,7 +66,7 @@ func SendMetric(sendURL string, metricType string, metricName string, metricValu
 	resp, err := client.R().
 		SetBody(buf.Bytes()).
 		SetHeader("Content-Encoding", "gzip").
-		Post(url)
+		Post(url.String())
 
 	// Check the response status code
 	if err != nil {
