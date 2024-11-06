@@ -7,16 +7,16 @@ import (
 	"os/signal"
 	"time"
 
-	f "github.com/ctcsar/metric-and-alerting-system-yp/internal/flags"
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/handlers"
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/storage"
+	f "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/flags"
+	handlers "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/handlers"
+	storage "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/storage"
 )
 
 const GaugeMetricsType = "gauge"
 const CounterMetricsType = "counter"
 
 func main() {
-	flags := f.NewFlags()
+	flags := f.NewAgentFlags()
 	memStorage := storage.MemStorage{}
 	flags.SetAgentFlags()
 	flag.Parse()
@@ -26,7 +26,8 @@ func main() {
 	for {
 		select {
 		case <-c:
-			return
+			fmt.Println("Agent stopped")
+			os.Exit(0)
 		case <-time.After(flags.GetSendDuration() * time.Second):
 			metrics := memStorage.Metrics
 			for k, v := range metrics.Gauge {

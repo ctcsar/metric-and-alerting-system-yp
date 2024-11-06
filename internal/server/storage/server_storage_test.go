@@ -41,7 +41,7 @@ func TestStorage_SetGauge(t *testing.T) {
 	}
 
 	// Test that SetGauge sets the expected value for a gauge metric
-	err := m.SetGauge("test", "10.0")
+	err := m.SetGauge("test", 10.0)
 	assert.Nil(t, err)
 	assert.Equal(t, 10.0, m.Gauge["test"])
 }
@@ -53,7 +53,7 @@ func TestStorage_SetCounter(t *testing.T) {
 	}
 
 	// Test that SetCounter sets the expected value for a counter metric
-	err := m.SetCounter("test", "10")
+	err := m.SetCounter("test", 10)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(10), m.Counter["test"])
 }
@@ -69,4 +69,42 @@ func TestStorage_IncrementCounter(t *testing.T) {
 	// Test that IncrementCounter increments the counter metric
 	m.Counter["test"]++
 	assert.Equal(t, int64(11), m.Counter["test"])
+}
+
+func TestStorage_SetStorage(t *testing.T) {
+	type fields struct {
+		Gauge   map[string]float64
+		Counter map[string]int64
+	}
+	type args struct {
+		metrics *Storage
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "SetStorage",
+			fields: fields{
+				Gauge:   map[string]float64{},
+				Counter: map[string]int64{},
+			},
+			args: args{
+				metrics: &Storage{
+					Gauge:   map[string]float64{"test": 10.0},
+					Counter: map[string]int64{"test": 10},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Storage{
+				Gauge:   tt.fields.Gauge,
+				Counter: tt.fields.Counter,
+			}
+			m.SetStorage(tt.args.metrics)
+		})
+	}
 }
