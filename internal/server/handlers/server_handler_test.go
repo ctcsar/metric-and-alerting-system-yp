@@ -3,6 +3,7 @@ package server
 
 import (
 	"bytes"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,12 +14,19 @@ import (
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
 
+func dbConnect() *sql.DB {
+	db, err := sql.Open("pgx", "host=localhost user=metrics password=password dbname=metrics")
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
 func TestGetMetricValueHandler(t *testing.T) {
 	// Create a test storage
 	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	f := "host=localhost user=metrics password=password dbname=metrics"
+	f := dbConnect()
 	Routers(r, m, f)
 
 	// Add a test metric value to the storage
@@ -43,7 +51,7 @@ func TestGetAllMetricsHandler(t *testing.T) {
 	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	f := "host=localhost user=metrics password=password dbname=metrics"
+	f := dbConnect()
 
 	Routers(r, m, f)
 
@@ -164,7 +172,7 @@ func TestRun(t *testing.T) {
 
 	// Create a test router
 	r := chi.NewRouter()
-	f := "host=localhost user=metrics password=password dbname=metrics"
+	f := dbConnect()
 
 	Routers(r, m, f)
 

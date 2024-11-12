@@ -27,8 +27,8 @@ type Metrics struct {
 }
 
 type Handler struct {
-	MemStorage  *storage.Storage
-	DatabaseDSN string
+	MemStorage *storage.Storage
+	db         *sql.DB
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -275,14 +275,7 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
-	databaseDSN := h.DatabaseDSN
-	ps := fmt.Sprintf("%s sslmode=disable",
-		databaseDSN)
-	db, err := sql.Open("pgx", ps)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	defer db.Close()
+	db := h.db
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -292,10 +285,10 @@ func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func Routers(handler chi.Router, metrics *storage.Storage, dbdsn string) {
+func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
 	h := Handler{
-		MemStorage:  metrics,
-		DatabaseDSN: dbdsn,
+		MemStorage: metrics,
+		db:         db,
 	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
@@ -305,9 +298,9 @@ func Routers(handler chi.Router, metrics *storage.Storage, dbdsn string) {
 	handler.Get("/ping", h.PingHandler)
 }
 
-func Run(url string, handler chi.Router, metrics *storage.Storage, dbdsn string) error {
+func Run(url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
-	Routers(handler, metrics, dbdsn)
+	Routers(handler, metrics, db)
 	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }

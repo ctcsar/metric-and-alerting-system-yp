@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"net/url"
@@ -33,6 +34,13 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
+	ps := fmt.Sprintf("%s sslmode=disable",
+		flags.GetDatabasePath())
+	db, err := sql.Open("pgx", ps)
+	if err != nil {
+		logger.Log.Info("cannot connect to database", zap.Error(err))
+	}
+	defer db.Close()
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
@@ -59,7 +67,7 @@ func main() {
 		}
 	}()
 
-	if err := h.Run(url.Host, handler, metrics, flags.GetDatabasePath()); err != nil {
+	if err := h.Run(url.Host, handler, metrics, db); err != nil {
 		fmt.Println(err)
 		return
 	}
