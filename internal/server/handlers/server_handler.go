@@ -1,10 +1,15 @@
 package server
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -22,7 +27,8 @@ type Metrics struct {
 }
 
 type Handler struct {
-	MemStorage *storage.Storage
+	MemStorage  *storage.Storage
+	DatabaseDSN string
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -268,18 +274,40 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Routers(handler chi.Router, metrics *storage.Storage) {
-	h := Handler{MemStorage: metrics}
+func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
+	databaseDSN := h.DatabaseDSN
+	ps := fmt.Sprintf("%s sslmode=disable",
+		databaseDSN)
+	db, err := sql.Open("pgx", ps)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	defer db.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func Routers(handler chi.Router, metrics *storage.Storage, dbdsn string) {
+	h := Handler{
+		MemStorage:  metrics,
+		DatabaseDSN: dbdsn,
+	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
 	handler.Post("/update/", h.JSONUpdateHandler)
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
+	handler.Get("/ping/", h.PingHandler)
 }
 
-func Run(url string, handler chi.Router, metrics *storage.Storage) error {
+func Run(url string, handler chi.Router, metrics *storage.Storage, dbdsn string) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
-	Routers(handler, metrics)
+	Routers(handler, metrics, dbdsn)
 	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }

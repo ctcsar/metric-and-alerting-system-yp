@@ -18,7 +18,8 @@ func TestGetMetricValueHandler(t *testing.T) {
 	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Routers(r, m)
+	f := "host=localhost user=metrics password=password dbname=metrics"
+	Routers(r, m, f)
 
 	// Add a test metric value to the storage
 	m.Gauge["test"] = 10.5
@@ -42,7 +43,9 @@ func TestGetAllMetricsHandler(t *testing.T) {
 	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Routers(r, m)
+	f := "host=localhost user=metrics password=password dbname=metrics"
+
+	Routers(r, m, f)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/", nil)
@@ -161,11 +164,13 @@ func TestRun(t *testing.T) {
 
 	// Create a test router
 	r := chi.NewRouter()
-	Routers(r, m)
+	f := "host=localhost user=metrics password=password dbname=metrics"
+
+	Routers(r, m, f)
 
 	// Start the server
 	go func() {
-		err := Run(url, r, m)
+		err := Run(url, r, m, f)
 		assert.NoError(t, err)
 	}()
 	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)
@@ -223,4 +228,32 @@ func TestGetCounterMetricValueJsonHandler(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, `{"id":"test","type":"counter","delta":10}`, w.Body.String())
+}
+
+func TestDatabaseConection(t *testing.T) {
+	// Create a test storage
+	h := NewHandler(storage.NewStorage())
+	h.DatabaseDSN = "host=localhost user=metrics password=password dbname=metrics"
+	m := storage.NewStorage()
+	url := "localhost:10050"
+
+	// Create a test router
+	r := chi.NewRouter()
+
+	Routers(r, m, h.DatabaseDSN)
+
+	go func() {
+		err := Run(url, r, m, h.DatabaseDSN)
+		assert.NoError(t, err)
+	}()
+
+	resp, err := http.NewRequest("GET", "/ping/", nil)
+	assert.NoError(t, err)
+
+	w := httptest.NewRecorder()
+
+	h.PingHandler(w, resp)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
 }

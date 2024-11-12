@@ -11,6 +11,8 @@ import (
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/files"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
 	f "github.com/ctcsar/metric-and-alerting-system-yp/internal/server/flags"
@@ -57,7 +59,7 @@ func main() {
 		}
 	}()
 
-	if err := h.Run(url.Host, handler, metrics); err != nil {
+	if err := h.Run(url.Host, handler, metrics, flags.GetDatabasePath()); err != nil {
 		fmt.Println(err)
 		return
 	}
