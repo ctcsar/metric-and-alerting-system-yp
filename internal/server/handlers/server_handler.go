@@ -1,13 +1,11 @@
 package server
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -275,15 +273,11 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
-	go func() {
-		db := h.db
-		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
-		defer cancel()
-		if err := db.PingContext(ctx); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		w.WriteHeader(http.StatusOK)
-	}()
+	db := h.db
+	if err := db.Ping(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
