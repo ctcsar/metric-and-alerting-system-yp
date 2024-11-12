@@ -235,7 +235,7 @@ func TestDatabaseConection(t *testing.T) {
 	h := NewHandler(storage.NewStorage())
 	h.DatabaseDSN = "host=localhost user=metrics password=password dbname=metrics"
 	m := storage.NewStorage()
-	url := "localhost:10050"
+	url := "localhost:8080"
 
 	// Create a test router
 	r := chi.NewRouter()
