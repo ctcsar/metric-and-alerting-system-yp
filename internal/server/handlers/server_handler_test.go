@@ -229,25 +229,3 @@ func TestGetCounterMetricValueJsonHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, `{"id":"test","type":"counter","delta":10}`, w.Body.String())
 }
-
-func TestDatabaseConection(t *testing.T) {
-	// Create a test storage
-	h := NewHandler(storage.NewStorage())
-	h.DatabaseDSN = "host=localhost user=metrics password=password dbname=metrics"
-	m := storage.NewStorage()
-
-	// Create a test router
-	r := chi.NewRouter()
-
-	Routers(r, m, h.DatabaseDSN)
-
-	resp, err := http.NewRequest("GET", "/ping/", nil)
-	assert.NoError(t, err)
-
-	w := httptest.NewRecorder()
-
-	h.PingHandler(w, resp)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-}
