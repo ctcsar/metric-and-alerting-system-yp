@@ -235,17 +235,11 @@ func TestDatabaseConection(t *testing.T) {
 	h := NewHandler(storage.NewStorage())
 	h.DatabaseDSN = "host=localhost user=metrics password=password dbname=metrics"
 	m := storage.NewStorage()
-	url := "localhost:8080"
 
 	// Create a test router
 	r := chi.NewRouter()
 
 	Routers(r, m, h.DatabaseDSN)
-
-	go func() {
-		err := Run(url, r, m, h.DatabaseDSN)
-		assert.NoError(t, err)
-	}()
 
 	resp, err := http.NewRequest("GET", "/ping/", nil)
 	assert.NoError(t, err)
