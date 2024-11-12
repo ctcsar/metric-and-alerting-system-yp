@@ -302,7 +302,7 @@ func Routers(handler chi.Router, metrics *storage.Storage, dbdsn string) {
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
 	handler.Post("/update/", h.JSONUpdateHandler)
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
-	handler.Get("/ping/", h.PingHandler)
+	handler.Get("/ping", h.PingHandler)
 }
 
 func Run(url string, handler chi.Router, metrics *storage.Storage, dbdsn string) error {
