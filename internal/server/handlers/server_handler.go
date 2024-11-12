@@ -275,14 +275,15 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
-	db := h.db
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	w.WriteHeader(http.StatusOK)
+	go func() {
+		db := h.db
+		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+		defer cancel()
+		if err := db.PingContext(ctx); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+	}()
 }
 
 func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
