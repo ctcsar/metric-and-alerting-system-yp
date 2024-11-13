@@ -35,15 +35,6 @@ func main() {
 		Host: flags.GetServerURL(),
 	}
 
-	ps := fmt.Sprintf("%s sslmode=disable",
-		flags.GetDatabasePath())
-
-	db, err := sql.Open("pgx", ps)
-	if err != nil {
-		logger.Log.Info("cannot connect to database", zap.Error(err))
-	}
-	defer db.Close()
-
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
 		if err != nil {
@@ -68,6 +59,15 @@ func main() {
 			}
 		}
 	}()
+
+	ps := fmt.Sprintf("%s sslmode=disable",
+		flags.GetDatabasePath())
+
+	db, err := sql.Open("pgx", ps)
+	if err != nil {
+		logger.Log.Info("cannot connect to database", zap.Error(err))
+	}
+	defer db.Close()
 
 	if err := h.Run(url.Host, handler, metrics, db); err != nil {
 		fmt.Println(err)

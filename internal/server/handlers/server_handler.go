@@ -272,12 +272,7 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	db := h.db
-	errChan := make(chan error)
-	go func() {
-		err := db.Ping()
-		errChan <- err
-	}()
-	err := <-errChan
+	err := db.Ping()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
