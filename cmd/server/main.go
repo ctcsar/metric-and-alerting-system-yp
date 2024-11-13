@@ -62,6 +62,7 @@ func main() {
 
 	ps := fmt.Sprintf("%s ",
 		flags.GetDatabasePath())
+	logger.Log.Info("connecting to database", zap.String("path", ps))
 
 	db, err := sql.Open("pgx", ps)
 	if err != nil {

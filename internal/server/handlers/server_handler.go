@@ -280,11 +280,6 @@ func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// err := db.Ping()
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
 	w.WriteHeader(http.StatusOK)
 }
 func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
