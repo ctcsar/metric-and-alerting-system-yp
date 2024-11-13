@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -272,11 +273,17 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	db := h.db
-	err := db.Ping()
-	if err != nil {
+	ctx := context.Background()
+	defer ctx.Done()
+	if err := db.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	// err := db.Ping()
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	return
+	// }
 	w.WriteHeader(http.StatusOK)
 }
 func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
