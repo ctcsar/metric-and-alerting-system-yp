@@ -3,22 +3,32 @@ package server
 
 import (
 	"bytes"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/go-chi/chi"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
 
+func dbConnect() *sql.DB {
+	db, err := sql.Open("pgx", "host=localhost user=metrics password=password dbname=metrics")
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
 func TestGetMetricValueHandler(t *testing.T) {
 	// Create a test storage
 	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Routers(r, m)
+	f := dbConnect()
+	Routers(r, m, f)
 
 	// Add a test metric value to the storage
 	m.Gauge["test"] = 10.5
@@ -42,7 +52,9 @@ func TestGetAllMetricsHandler(t *testing.T) {
 	m := storage.NewStorage()
 	// Create a test router
 	r := chi.NewRouter()
-	Routers(r, m)
+	f := dbConnect()
+
+	Routers(r, m, f)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/", nil)
@@ -161,11 +173,13 @@ func TestRun(t *testing.T) {
 
 	// Create a test router
 	r := chi.NewRouter()
-	Routers(r, m)
+	f := dbConnect()
+
+	Routers(r, m, f)
 
 	// Start the server
 	go func() {
-		err := Run(url, r, m)
+		err := Run(url, r, m, f)
 		assert.NoError(t, err)
 	}()
 	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)

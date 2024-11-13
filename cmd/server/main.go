@@ -1,12 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
 	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -57,7 +60,15 @@ func main() {
 		}
 	}()
 
-	if err := h.Run(url.Host, handler, metrics); err != nil {
+	// dsn := fmt.Sprintf("%v", flags.GetDatabasePath())
+
+	db, err := sql.Open("pgx", flags.GetDatabasePath())
+	if err != nil {
+		logger.Log.Info("cannot connect to database", zap.Error(err))
+	}
+	defer db.Close()
+
+	if err := h.Run(url.Host, handler, metrics, db); err != nil {
 		fmt.Println(err)
 		return
 	}

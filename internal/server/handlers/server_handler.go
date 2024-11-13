@@ -1,10 +1,13 @@
 package server
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -23,6 +26,7 @@ type Metrics struct {
 
 type Handler struct {
 	MemStorage *storage.Storage
+	db         *sql.DB
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -268,18 +272,32 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Routers(handler chi.Router, metrics *storage.Storage) {
-	h := Handler{MemStorage: metrics}
+func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
+	db := h.db
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
+	h := Handler{
+		MemStorage: metrics,
+		db:         db,
+	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
 	handler.Post("/update/", h.JSONUpdateHandler)
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
+	handler.Get("/ping", h.PingHandler)
 }
 
-func Run(url string, handler chi.Router, metrics *storage.Storage) error {
+func Run(url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
-	Routers(handler, metrics)
+	Routers(handler, metrics, db)
 	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }
