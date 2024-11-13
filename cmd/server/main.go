@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"flag"
 	"fmt"
 	"net/url"
@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/files"
@@ -34,9 +35,11 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
+
 	ps := fmt.Sprintf("%s sslmode=disable",
 		flags.GetDatabasePath())
-	db, err := sql.Open("pgx", ps)
+
+	db, err := pgxpool.New(context.Background(), ps)
 	if err != nil {
 		logger.Log.Info("cannot connect to database", zap.Error(err))
 	}
