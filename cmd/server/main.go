@@ -60,7 +60,7 @@ func main() {
 		}
 	}()
 
-	ps := fmt.Sprintf("%s sslmode=disable",
+	ps := fmt.Sprintf("%s ",
 		flags.GetDatabasePath())
 
 	db, err := sql.Open("pgx", ps)
