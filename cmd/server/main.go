@@ -60,11 +60,11 @@ func main() {
 		}
 	}()
 
-	ps := fmt.Sprintf("%s ",
-		flags.GetDatabasePath())
-	logger.Log.Info("connecting to database", zap.String("path", ps))
+	logger.Log.Info("connecting to database", zap.String("path", flags.GetDatabasePath()))
 
-	db, err := sql.Open("pgx", ps)
+	dsn := fmt.Sprintf("postgres://%s", flags.GetDatabasePath())
+
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		logger.Log.Info("cannot connect to database", zap.Error(err))
 	}
