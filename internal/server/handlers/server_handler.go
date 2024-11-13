@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -272,7 +271,6 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
 	db := h.db
 	errChan := make(chan error)
 	go func() {
@@ -285,7 +283,6 @@ func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	logger.Log.Info("ping", zap.Duration("time", time.Since(start)))
 }
 func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
 	h := Handler{
