@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -273,11 +274,10 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	db := h.db
-	ctx := context.Background()
-	defer ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 	// err := db.Ping()
 	// if err != nil {
