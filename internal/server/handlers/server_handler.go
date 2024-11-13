@@ -278,6 +278,7 @@ func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	// err := db.Ping()
 	// if err != nil {
