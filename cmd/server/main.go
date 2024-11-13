@@ -60,15 +60,13 @@ func main() {
 		}
 	}()
 
-	dsn := fmt.Sprintf("%v", flags.GetDatabasePath())
+	// dsn := fmt.Sprintf("%v", flags.GetDatabasePath())
 
-	db, err := sql.Open("pgx", dsn)
-	// db, err := sql.Open("pgx", flags.GetDatabasePath())
+	db, err := sql.Open("pgx", flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Info("cannot connect to database", zap.Error(err))
 	}
 	defer db.Close()
-	logger.Log.Info("connecting to database", zap.String("path", dsn))
 
 	if err := h.Run(url.Host, handler, metrics, db); err != nil {
 		fmt.Println(err)
