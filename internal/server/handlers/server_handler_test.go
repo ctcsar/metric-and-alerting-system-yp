@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
