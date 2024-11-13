@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -276,17 +275,20 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	ctx := context.Background()
-	defer ctx.Done()
 	db := h.db
-	err := db.Ping(ctx)
+	errChan := make(chan error)
+	go func() {
+		err := db.Ping(context.Background())
+		errChan <- err
+	}()
+	err := <-errChan
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 	logger.Log.Info("ping", zap.Duration("time", time.Since(start)))
 }
-
 func Routers(handler chi.Router, metrics *storage.Storage, db *pgxpool.Pool) {
 	h := Handler{
 		MemStorage: metrics,

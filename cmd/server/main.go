@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/files"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
