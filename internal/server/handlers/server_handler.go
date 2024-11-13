@@ -1,14 +1,12 @@
 package server
 
 import (
-	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -27,7 +25,7 @@ type Metrics struct {
 
 type Handler struct {
 	MemStorage *storage.Storage
-	db         *pgxpool.Pool
+	db         *sql.DB
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -278,7 +276,7 @@ func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	db := h.db
 	errChan := make(chan error)
 	go func() {
-		err := db.Ping(context.Background())
+		err := db.Ping()
 		errChan <- err
 	}()
 	err := <-errChan
@@ -289,7 +287,7 @@ func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	logger.Log.Info("ping", zap.Duration("time", time.Since(start)))
 }
-func Routers(handler chi.Router, metrics *storage.Storage, db *pgxpool.Pool) {
+func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
 	h := Handler{
 		MemStorage: metrics,
 		db:         db,
@@ -302,7 +300,7 @@ func Routers(handler chi.Router, metrics *storage.Storage, db *pgxpool.Pool) {
 	handler.Get("/ping", h.PingHandler)
 }
 
-func Run(url string, handler chi.Router, metrics *storage.Storage, db *pgxpool.Pool) error {
+func Run(url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
 	Routers(handler, metrics, db)

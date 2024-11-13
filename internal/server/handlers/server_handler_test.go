@@ -3,20 +3,19 @@ package server
 
 import (
 	"bytes"
-	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/go-chi/chi"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
 
-func dbConnect() *pgxpool.Pool {
-	db, err := pgxpool.New(context.Background(), "host=localhost user=metrics password=password dbname=metrics")
+func dbConnect() *sql.DB {
+	db, err := sql.Open("pgx", "host=localhost user=metrics password=password dbname=metrics")
 	if err != nil {
 		panic(err)
 	}
