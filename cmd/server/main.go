@@ -60,7 +60,7 @@ func main() {
 		}
 	}()
 
-	dsn := fmt.Sprintf("postgresql://%v", flags.GetDatabasePath())
+	dsn := fmt.Sprintf("%v", flags.GetDatabasePath())
 
 	db, err := sql.Open("pgx", dsn)
 	// db, err := sql.Open("pgx", flags.GetDatabasePath())
