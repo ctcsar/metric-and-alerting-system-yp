@@ -16,8 +16,8 @@ import (
 type sendMetrics struct {
 	ID    string  `json:"id"`
 	MType string  `json:"type"`
-	Delta int64   `json:"delta,omitempty"`
-	Value float64 `json:"value,omitempty"`
+	Delta int64   `json:"delta"`
+	Value float64 `json:"value"`
 }
 
 // func SendMetric(sendURL string, metricType string, metricName string, metricValue string) error {
@@ -81,22 +81,18 @@ func SendMetric(sendURL string, metrics *storage.Metrics) error {
 	var req []sendMetrics
 
 	for k, v := range metrics.Gauge {
-		if v != 0 {
-			req = append(req, sendMetrics{
-				ID:    k,
-				MType: "gauge",
-				Value: v,
-			})
-		}
+		req = append(req, sendMetrics{
+			ID:    k,
+			MType: "gauge",
+			Value: v,
+		})
 	}
 	for k, v := range metrics.Counter {
-		if v != 0 {
-			req = append(req, sendMetrics{
-				ID:    k,
-				MType: "counter",
-				Delta: v,
-			})
-		}
+		req = append(req, sendMetrics{
+			ID:    k,
+			MType: "counter",
+			Delta: v,
+		})
 	}
 	url := url.URL{
 		Scheme: "http",
