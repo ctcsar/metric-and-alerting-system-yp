@@ -36,20 +36,6 @@ func main() {
 					fmt.Println(err)
 				}
 			}
-			// fmt.Printf("Send metrics: %v\n", metrics)
-			// for k, v := range metrics.Gauge {
-
-			// 	err := handlers.SendMetric(flags.GetURLForSend(), GaugeMetricsType, k, fmt.Sprintf("%f", v))
-			// 	if err != nil {
-			// 		fmt.Println(err)
-			// 	}
-			// }
-			// for k, v := range metrics.Counter {
-			// 	err := handlers.SendMetric(flags.GetURLForSend(), CounterMetricsType, k, fmt.Sprintf("%d", v))
-			// 	if err != nil {
-			// 		fmt.Println(err)
-			// 	}
-			// }
 		}
 
 	}
