@@ -36,6 +36,8 @@ func TestGetMetrics(t *testing.T) {
 	memStorage := storage.MemStorage{}
 
 	// Call the get metrics function
+	memStorage.Mutex.Lock()
+	defer memStorage.Mutex.Unlock()
 	go memStorage.GetMetrics(f.GetMetricsGetDuration())
 
 	// Wait for the get metrics function to finish

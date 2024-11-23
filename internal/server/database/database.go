@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"go.uber.org/zap"
 
@@ -34,11 +36,21 @@ func DBConnect(dsn string) (*sql.DB, error) {
 
 func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
 
-	tx, err := db.Begin()
+	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}
 
+	defer func() {
+		if err != nil {
+			rbErr := tx.Rollback()
+			if rbErr != nil {
+				log.Println("Rollback error:", rbErr)
+			}
+		} else {
+			err = tx.Commit()
+		}
+	}()
 	for k, v := range metrics.Gauge {
 
 		_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
@@ -54,9 +66,5 @@ func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
 	return nil
 }

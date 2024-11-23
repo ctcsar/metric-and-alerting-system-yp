@@ -272,6 +272,33 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var buff *storage.Storage
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&buff)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	for k, v := range buff.Gauge {
+		err := h.MemStorage.SetGauge(k, v)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+	for k, v := range buff.Counter {
+		err := h.MemStorage.SetCounter(k, v)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+}
+
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	db := h.db
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -291,6 +318,7 @@ func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
 	handler.Get("/", h.GetAllMetricsHandler)
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
 	handler.Post("/update/", h.JSONUpdateHandler)
+	handler.Post("/updates/", h.JSONUpdateAllMetricsHandler)
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
 	handler.Get("/ping", h.PingHandler)
 }
