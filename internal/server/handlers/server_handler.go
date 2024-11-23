@@ -275,7 +275,7 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var buff *storage.Storage
+	var buff []Metrics
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&buff)
@@ -283,20 +283,24 @@ func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	for k, v := range buff.Gauge {
-		err := h.MemStorage.SetGauge(k, v)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
+
+	for _, metric := range buff {
+		switch metric.MType {
+		case "gauge":
+			err = h.MemStorage.SetGauge(metric.ID, *metric.Value)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		case "counter":
+			err = h.MemStorage.SetCounter(metric.ID, *metric.Delta)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 		}
 	}
-	for k, v := range buff.Counter {
-		err := h.MemStorage.SetCounter(k, v)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {

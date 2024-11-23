@@ -59,7 +59,6 @@ func (m *MemStorage) SetStorage(rand float64) {
 		"RandomValue":   rand,
 	}
 	m.Mutex.Unlock()
-	fmt.Println(m.Metrics.Gauge)
 }
 
 func (m *MemStorage) SetCounter(count int64) {
@@ -67,7 +66,6 @@ func (m *MemStorage) SetCounter(count int64) {
 	m.Metrics.Counter = map[string]int64{
 		"PollCount": count,
 	}
-	fmt.Println(m.Metrics.Counter)
 }
 
 func (m *MemStorage) GetMetrics(duratiomTime time.Duration) {

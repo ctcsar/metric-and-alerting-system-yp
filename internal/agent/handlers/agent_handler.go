@@ -13,12 +13,12 @@ import (
 	storage "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/storage"
 )
 
-// type sendMetrics struct {
-// 	ID    string  `json:"id"`
-// 	MType string  `json:"type"`
-// 	Delta int64   `json:"delta,omitempty"`
-// 	Value float64 `json:"value,omitempty"`
-// }
+type sendMetrics struct {
+	ID    string  `json:"id"`
+	MType string  `json:"type"`
+	Delta int64   `json:"delta,omitempty"`
+	Value float64 `json:"value,omitempty"`
+}
 
 // func SendMetric(sendURL string, metricType string, metricName string, metricValue string) error {
 // 	var req sendMetrics
@@ -78,12 +78,32 @@ import (
 //	}
 func SendMetric(sendURL string, metrics *storage.Metrics) error {
 
+	var req []sendMetrics
+
+	for k, v := range metrics.Gauge {
+		if v != 0 {
+			req = append(req, sendMetrics{
+				ID:    k,
+				MType: "gauge",
+				Value: v,
+			})
+		}
+	}
+	for k, v := range metrics.Counter {
+		if v != 0 {
+			req = append(req, sendMetrics{
+				ID:    k,
+				MType: "counter",
+				Delta: v,
+			})
+		}
+	}
 	url := url.URL{
 		Scheme: "http",
 		Host:   sendURL,
 		Path:   "/updates/",
 	}
-	jsonReq, err := json.Marshal(metrics)
+	jsonReq, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
