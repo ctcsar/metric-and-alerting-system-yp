@@ -7,48 +7,47 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/go-resty/resty/v2"
+
+	storage "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/storage"
 )
 
 type sendMetrics struct {
-	ID    string   `json:"id"`
-	MType string   `json:"type"`
-	Delta *int64   `json:"delta,omitempty"`
-	Value *float64 `json:"value,omitempty"`
+	ID    string  `json:"id"`
+	MType string  `json:"type"`
+	Delta int64   `json:"delta"`
+	Value float64 `json:"value"`
 }
 
-func SendMetric(sendURL string, metricType string, metricName string, metricValue string) error {
-	var req sendMetrics
+func SendMetric(sendURL string, metrics *storage.Metrics) error {
 
-	req.ID = metricName
-	req.MType = metricType
-	switch metricType {
-	case "counter":
-		val, err := strconv.ParseInt(metricValue, 10, 64)
-		if err != nil {
-			return err
-		}
-		req.Delta = &val
-	case "gauge":
-		val, err := strconv.ParseFloat(metricValue, 64)
-		if err != nil {
-			return err
-		}
-		req.Value = &val
+	var req []sendMetrics
+
+	for k, v := range metrics.Gauge {
+		req = append(req, sendMetrics{
+			ID:    k,
+			MType: "gauge",
+			Value: v,
+		})
+	}
+	for k, v := range metrics.Counter {
+		req = append(req, sendMetrics{
+			ID:    k,
+			MType: "counter",
+			Delta: v,
+		})
 	}
 	url := url.URL{
 		Scheme: "http",
 		Host:   sendURL,
-		Path:   "/update/",
+		Path:   "/updates/",
 	}
 	jsonReq, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
 
-	// Compress the request body using gzip
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	_, err = gz.Write(jsonReq)
@@ -62,13 +61,11 @@ func SendMetric(sendURL string, metricType string, metricName string, metricValu
 
 	client := resty.New()
 
-	// Set the request body and header
 	resp, err := client.R().
 		SetBody(buf.Bytes()).
 		SetHeader("Content-Encoding", "gzip").
 		Post(url.String())
 
-	// Check the response status code
 	if err != nil {
 		return err
 	}

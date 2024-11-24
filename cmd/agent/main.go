@@ -30,15 +30,8 @@ func main() {
 			os.Exit(0)
 		case <-time.After(flags.GetSendDuration() * time.Second):
 			metrics := memStorage.Metrics
-			for k, v := range metrics.Gauge {
-
-				err := handlers.SendMetric(flags.GetURLForSend(), GaugeMetricsType, k, fmt.Sprintf("%f", v))
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
-			for k, v := range metrics.Counter {
-				err := handlers.SendMetric(flags.GetURLForSend(), CounterMetricsType, k, fmt.Sprintf("%d", v))
+			if metrics.Gauge != nil || metrics.Counter != nil {
+				err := handlers.SendMetric(flags.GetURLForSend(), &metrics)
 				if err != nil {
 					fmt.Println(err)
 				}
