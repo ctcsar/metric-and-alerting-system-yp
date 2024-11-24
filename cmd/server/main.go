@@ -10,7 +10,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/go-chi/chi"
+	chi "github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/files"
