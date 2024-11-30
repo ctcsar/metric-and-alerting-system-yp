@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/jackc/pgerrcode"
@@ -39,12 +38,8 @@ func isRetriableError(err error) bool {
 }
 
 func retryQuery(ctx context.Context, query func() error) error {
-	c := make(chan os.Signal, 1)
-
 	for i := 0; i < maxRetries; i++ {
 		select {
-		case <-c:
-			os.Exit(0)
 		case <-ctx.Done():
 		default:
 			err := query()

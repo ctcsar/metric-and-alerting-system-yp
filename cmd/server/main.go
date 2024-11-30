@@ -50,25 +50,26 @@ func main() {
 		for {
 			select {
 			case <-c:
+				err = file.WriteFile(metrics, flags.GetStoragePath())
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
 				err := database.DBSaveMetrics(db, metrics)
 				if err != nil {
 					logger.Log.Info("cannot save metrics to database", zap.Error(err))
 					return
-				}
-				err = file.WriteFile(metrics, flags.GetStoragePath())
-				if err != nil {
-					fmt.Println(err)
 				}
 				os.Exit(0)
 			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
-				err := database.DBSaveMetrics(db, metrics)
-				if err != nil {
-					logger.Log.Info("cannot save metrics to database", zap.Error(err))
-					return
-				}
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
 					fmt.Println(err)
+					return
+				}
+				err := database.DBSaveMetrics(db, metrics)
+				if err != nil {
+					logger.Log.Info("cannot save metrics to database", zap.Error(err))
 					return
 				}
 			}
