@@ -3,34 +3,78 @@ package server
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
+	"time"
 
-	"go.uber.org/zap"
+	"github.com/jackc/pgerrcode"
 
-	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
+	"github.com/jackc/pgx"
 )
+
+const (
+	maxRetries   = 3
+	initialDelay = 1 * time.Second
+	maxDelay     = 5 * time.Second
+)
+
+func isRetriableError(err error) bool {
+	var pgErr *pgx.PgError
+	if errors.As(err, &pgErr) {
+		if pgerrcode.UniqueViolation == pgerrcode.ConnectionDoesNotExist {
+			return true
+		}
+		if pgerrcode.UniqueViolation == pgerrcode.ConnectionException {
+			return true
+		}
+	}
+	return false
+}
+
+func retryQuery(ctx context.Context, query func() error) error {
+	delay := initialDelay
+	for i := 0; i < maxRetries; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			err := query()
+			if err == nil {
+				return nil
+			}
+			if !isRetriableError(err) {
+				return err
+			}
+			time.Sleep(delay)
+			delay = time.Duration(min(delay*2, maxDelay))
+		}
+	}
+	return errors.New("failed after max retries")
+}
 
 func DBConnect(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
 	}
-	exec := `CREATE TABLE IF NOT EXISTS counter_metrics (
-		name text NOT NULL UNIQUE,
-		value bigint NOT NULL
-		);
-	
-		CREATE TABLE IF NOT EXISTS gauge_metrics (
-		name text NOT NULL UNIQUE,
-		value double precision NOT NULL
-		);`
-	_, err = db.Exec(exec)
+	err = retryQuery(context.Background(), func() error {
+		exec := `CREATE TABLE IF NOT EXISTS counter_metrics (
+            name text NOT NULL UNIQUE,
+            value bigint NOT NULL
+            );
+        
+            CREATE TABLE IF NOT EXISTS gauge_metrics (
+            name text NOT NULL UNIQUE,
+            value double precision NOT NULL
+            );`
+		_, err := db.Exec(exec)
+		return err
+	})
 	if err != nil {
-		logger.Log.Info("cannot create tables", zap.Error(err))
+		return nil, err
 	}
-
 	return db, nil
 }
 
