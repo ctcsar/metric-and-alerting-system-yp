@@ -39,20 +39,16 @@ func isRetriableError(err error) bool {
 
 func retryQuery(ctx context.Context, query func() error) error {
 	for i := 0; i < maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			err := query()
-			if err == nil {
-				return nil
-			}
-			if !isRetriableError(err) {
-				return err
-			}
-			time.Sleep(retryDelays[i])
+		err := query()
+		if err == nil {
+			return nil
 		}
+		if !isRetriableError(err) {
+			return err
+		}
+		time.Sleep(retryDelays[i])
 	}
+	ctx.Done()
 	return errors.New("failed after max retries")
 }
 
