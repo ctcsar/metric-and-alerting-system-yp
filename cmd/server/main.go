@@ -8,11 +8,14 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/go-chi/chi"
+	_ "github.com/jackc/pgx/v5/stdlib"
+
+	chi "github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/files"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
+	database "github.com/ctcsar/metric-and-alerting-system-yp/internal/server/database"
 	f "github.com/ctcsar/metric-and-alerting-system-yp/internal/server/flags"
 	h "github.com/ctcsar/metric-and-alerting-system-yp/internal/server/handlers"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
@@ -31,6 +34,11 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
+	db, err := database.DBConnect(flags.GetDatabasePath())
+	if err != nil {
+		logger.Log.Info("cannot connect to database", zap.Error(err))
+	}
+	defer db.Close()
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
@@ -42,22 +50,33 @@ func main() {
 		for {
 			select {
 			case <-c:
-				err := file.WriteFile(metrics, flags.GetStoragePath())
+				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
 					fmt.Println(err)
+					return
+				}
+				err := database.DBSaveMetrics(db, metrics)
+				if err != nil {
+					logger.Log.Info("cannot save metrics to database", zap.Error(err))
+					return
 				}
 				os.Exit(0)
 			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
-				err := file.WriteFile(metrics, flags.GetStoragePath())
+				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
 					fmt.Println(err)
+					return
+				}
+				err := database.DBSaveMetrics(db, metrics)
+				if err != nil {
+					logger.Log.Info("cannot save metrics to database", zap.Error(err))
 					return
 				}
 			}
 		}
 	}()
 
-	if err := h.Run(url.Host, handler, metrics); err != nil {
+	if err := h.Run(url.Host, handler, metrics, db); err != nil {
 		fmt.Println(err)
 		return
 	}
