@@ -27,9 +27,6 @@ var retryDelays = []time.Duration{
 func isRetriableError(err error) bool {
 	var pgErr *pgx.PgError
 	if errors.As(err, &pgErr) {
-		if pgerrcode.UniqueViolation == pgerrcode.ConnectionDoesNotExist {
-			return true
-		}
 		if pgerrcode.UniqueViolation == pgerrcode.ConnectionException {
 			return true
 		}
@@ -48,7 +45,7 @@ func retryQuery(ctx context.Context, query func() error) error {
 		}
 		time.Sleep(retryDelays[i])
 	}
-	ctx.Done()
+	defer ctx.Done()
 	return errors.New("failed after max retries")
 }
 
