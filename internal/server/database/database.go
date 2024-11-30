@@ -15,10 +15,14 @@ import (
 )
 
 const (
-	maxRetries   = 3
-	initialDelay = 1 * time.Second
-	maxDelay     = 5 * time.Second
+	maxRetries = 3
 )
+
+var retryDelays = []time.Duration{
+	1 * time.Second,
+	3 * time.Second,
+	5 * time.Second,
+}
 
 func isRetriableError(err error) bool {
 	var pgErr *pgx.PgError
@@ -34,7 +38,6 @@ func isRetriableError(err error) bool {
 }
 
 func retryQuery(ctx context.Context, query func() error) error {
-	delay := initialDelay
 	for i := 0; i < maxRetries; i++ {
 		select {
 		case <-ctx.Done():
@@ -47,8 +50,7 @@ func retryQuery(ctx context.Context, query func() error) error {
 			if !isRetriableError(err) {
 				return err
 			}
-			time.Sleep(delay)
-			delay = time.Duration(min(delay*2, maxDelay))
+			time.Sleep(retryDelays[i])
 		}
 	}
 	return errors.New("failed after max retries")
