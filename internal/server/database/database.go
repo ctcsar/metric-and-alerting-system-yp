@@ -27,6 +27,9 @@ var retryDelays = []time.Duration{
 func isRetriableError(err error) bool {
 	var pgErr *pgx.PgError
 	if errors.As(err, &pgErr) {
+		if pgerrcode.UniqueViolation == pgerrcode.ConnectionDoesNotExist {
+			return true
+		}
 		if pgerrcode.UniqueViolation == pgerrcode.ConnectionException {
 			return true
 		}
@@ -36,16 +39,19 @@ func isRetriableError(err error) bool {
 
 func retryQuery(ctx context.Context, query func() error) error {
 	for i := 0; i < maxRetries; i++ {
-		err := query()
-		if err == nil {
-			return nil
+		select {
+		case <-ctx.Done():
+		default:
+			err := query()
+			if err == nil {
+				return nil
+			}
+			if !isRetriableError(err) {
+				return err
+			}
+			time.Sleep(retryDelays[i])
 		}
-		if !isRetriableError(err) {
-			return err
-		}
-		time.Sleep(retryDelays[i])
 	}
-	defer ctx.Done()
 	return errors.New("failed after max retries")
 }
 
@@ -77,7 +83,7 @@ func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
 
 	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot start transaction: %w", err)
 	}
 
 	defer func() {

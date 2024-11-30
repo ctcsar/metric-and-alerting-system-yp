@@ -52,7 +52,8 @@ func main() {
 			case <-c:
 				err := database.DBSaveMetrics(db, metrics)
 				if err != nil {
-					fmt.Println(err)
+					logger.Log.Info("cannot save metrics to database", zap.Error(err))
+					return
 				}
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
@@ -62,7 +63,8 @@ func main() {
 			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
 				err := database.DBSaveMetrics(db, metrics)
 				if err != nil {
-					fmt.Println(err)
+					logger.Log.Info("cannot save metrics to database", zap.Error(err))
+					return
 				}
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
