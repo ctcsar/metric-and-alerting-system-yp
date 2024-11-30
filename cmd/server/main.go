@@ -37,6 +37,7 @@ func main() {
 	db, err := database.DBConnect(flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Info("cannot connect to database", zap.Error(err))
+		return
 	}
 	defer db.Close()
 
