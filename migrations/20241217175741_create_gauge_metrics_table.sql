@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE  gauge_metrics (
+CREATE TABLE gauge_metrics (
             name text NOT NULL UNIQUE,
             value bigint NOT NULL
             );

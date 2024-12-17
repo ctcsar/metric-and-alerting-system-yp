@@ -40,9 +40,10 @@ func main() {
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
+	defer db.Close()
 
 	// if err := goose.Up(db, "../../migrations"); err != nil {
-	// 	log.Fatalf("Ошибка миграции: %v", err)
+	// 	logger.Log.Fatal("Ошибка миграции", zap.Error(err))
 	// }
 
 	if flags.GetRestore() {
