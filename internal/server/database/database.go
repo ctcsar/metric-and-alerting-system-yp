@@ -60,6 +60,8 @@ func DBConnect(dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
+
 	return db, nil
 }
 
