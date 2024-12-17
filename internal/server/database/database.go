@@ -41,6 +41,7 @@ func retryQuery(ctx context.Context, query func() error) error {
 	for i := 0; i < maxRetries; i++ {
 		select {
 		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			err := query()
 			if err == nil {
