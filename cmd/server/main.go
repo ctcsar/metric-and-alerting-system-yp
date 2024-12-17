@@ -27,7 +27,6 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	ctx := context.Background()
-	defer ctx.Done()
 
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
@@ -61,11 +60,13 @@ func main() {
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
 					logger.Log.Warn("cannot save to file", zap.Error(err))
+					os.Exit(0)
 					return
 				}
 				err := database.DBSaveMetrics(ctx, db, metrics)
 				if err != nil {
 					logger.Log.Error("cannot save metrics to database", zap.Error(err))
+					os.Exit(0)
 					return
 				}
 				os.Exit(0)
