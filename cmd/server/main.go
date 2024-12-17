@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"net/url"
 	"os"
 	"os/signal"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/pressly/goose/v3"
 
 	chi "github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -43,9 +41,9 @@ func main() {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
 
-	if err := goose.Up(db, "../../migrations"); err != nil {
-		log.Fatalf("Ошибка миграции: %v", err)
-	}
+	// if err := goose.Up(db, "../../migrations"); err != nil {
+	// 	log.Fatalf("Ошибка миграции: %v", err)
+	// }
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
