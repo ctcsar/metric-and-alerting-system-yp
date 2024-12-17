@@ -172,7 +172,7 @@ func TestUpdateHandler_InvalidMetricType(t *testing.T) {
 func TestRun(t *testing.T) {
 	// Create a test storage
 	m := storage.NewStorage()
-	url := "localhost:8080"
+	url := "localhost:9090"
 	ctx := context.Background()
 
 	// Create a test router
