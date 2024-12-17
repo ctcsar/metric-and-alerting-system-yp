@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose"
 
 	chi "github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -42,9 +43,10 @@ func main() {
 	}
 	defer db.Close()
 
-	// if err := goose.Up(db, "../../migrations"); err != nil {
-	// 	logger.Log.Fatal("Ошибка миграции", zap.Error(err))
-	// }
+	err = goose.Up(db, "../../migrations")
+	if err != nil {
+		logger.Log.Fatal("Ошибка миграции", zap.Error(err))
+	}
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
