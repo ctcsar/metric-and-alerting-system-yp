@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"os/signal"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 
 	chi "github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -24,6 +26,7 @@ import (
 func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
+	ctx := context.Background()
 
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
@@ -36,9 +39,13 @@ func main() {
 	}
 	db, err := database.DBConnect(flags.GetDatabasePath())
 	if err != nil {
-		logger.Log.Info("cannot connect to database", zap.Error(err))
+		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
 	defer db.Close()
+
+	if err := goose.Up(db, "../../migrations"); err != nil {
+		log.Fatalf("Ошибка миграции: %v", err)
+	}
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
@@ -52,32 +59,32 @@ func main() {
 			case <-c:
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
-					fmt.Println(err)
+					logger.Log.Warn("cannot save to file", zap.Error(err))
 					return
 				}
-				err := database.DBSaveMetrics(db, metrics)
+				err := database.DBSaveMetrics(ctx, db, metrics)
 				if err != nil {
-					logger.Log.Info("cannot save metrics to database", zap.Error(err))
+					logger.Log.Error("cannot save metrics to database", zap.Error(err))
 					return
 				}
 				os.Exit(0)
 			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
-					fmt.Println(err)
+					logger.Log.Warn("cannot save to file", zap.Error(err))
 					return
 				}
-				err := database.DBSaveMetrics(db, metrics)
+				err := database.DBSaveMetrics(ctx, db, metrics)
 				if err != nil {
-					logger.Log.Info("cannot save metrics to database", zap.Error(err))
+					logger.Log.Error("cannot save metrics to database", zap.Error(err))
 					return
 				}
 			}
 		}
 	}()
 
-	if err := h.Run(url.Host, handler, metrics, db); err != nil {
-		fmt.Println(err)
+	if err := h.Run(ctx, url.Host, handler, metrics, db); err != nil {
+		logger.Log.Fatal("cannot run handlers", zap.Error(err))
 		return
 	}
 }

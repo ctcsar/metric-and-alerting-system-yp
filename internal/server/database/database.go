@@ -27,10 +27,10 @@ var retryDelays = []time.Duration{
 func isRetriableError(err error) bool {
 	var pgErr *pgx.PgError
 	if errors.As(err, &pgErr) {
-		if pgerrcode.UniqueViolation == pgerrcode.ConnectionDoesNotExist {
+		if pgErr.Code == pgerrcode.ConnectionDoesNotExist {
 			return true
 		}
-		if pgerrcode.UniqueViolation == pgerrcode.ConnectionException {
+		if pgErr.Code == pgerrcode.ConnectionException {
 			return true
 		}
 	}
@@ -60,28 +60,13 @@ func DBConnect(dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = retryQuery(context.Background(), func() error {
-		exec := `CREATE TABLE IF NOT EXISTS counter_metrics (
-            name text NOT NULL UNIQUE,
-            value bigint NOT NULL
-            );
-        
-            CREATE TABLE IF NOT EXISTS gauge_metrics (
-            name text NOT NULL UNIQUE,
-            value double precision NOT NULL
-            );`
-		_, err := db.Exec(exec)
-		return err
-	})
-	if err != nil {
-		return nil, err
-	}
+
 	return db, nil
 }
 
-func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
+func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
 
-	tx, err := db.BeginTx(context.Background(), nil)
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("cannot start transaction: %w", err)
 	}
@@ -97,15 +82,20 @@ func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
 		}
 	}()
 	for k, v := range metrics.Gauge {
-
-		_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+		err = retryQuery(ctx, func() error {
+			_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+			return err
+		})
 		if err != nil {
 			return fmt.Errorf("error inserting gauge metric: %w", err)
 		}
 	}
 
 	for k, v := range metrics.Counter {
-		_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+		err = retryQuery(ctx, func() error {
+			_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+			return err
+		})
 		if err != nil {
 			return fmt.Errorf("error inserting counter metric: %w", err)
 		}

@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-resty/resty/v2"
 
 	storage "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/storage"
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/retry"
 )
 
 const maxRetries = 3
@@ -29,22 +31,14 @@ type sendMetrics struct {
 	Value float64 `json:"value"`
 }
 
-func SendMetric(sendURL string, metrics *storage.Metrics) error {
-	var err error
+func SendMetric(ctx context.Context, sendURL string, metrics *storage.Metrics) error {
 
-	for i := 0; i < maxRetries; i++ {
-		err = sendData(sendURL, metrics)
-		if err != nil {
-			fmt.Println("Failed to send data:", err)
-			time.Sleep(retryDelays[i])
-			continue
-		}
-
-		break
-	}
+	err := retry.Retry(func() error {
+		return sendData(sendURL, metrics)
+	}, maxRetries, ctx, retryDelays)
 
 	if err != nil {
-		return fmt.Errorf("failed to send metrics after 3 retries: %w", err)
+		return fmt.Errorf("failed to send metrics after %d retries: %w", maxRetries, err)
 	}
 
 	return nil

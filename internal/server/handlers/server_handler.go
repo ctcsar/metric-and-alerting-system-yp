@@ -27,6 +27,7 @@ type Metrics struct {
 type Handler struct {
 	MemStorage *storage.Storage
 	db         *sql.DB
+	context    context.Context
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -287,12 +288,20 @@ func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Requ
 	for _, metric := range buff {
 		switch metric.MType {
 		case "gauge":
+			if metric.Value == nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			err = h.MemStorage.SetGauge(metric.ID, *metric.Value)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 		case "counter":
+			if metric.Delta == nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			err = h.MemStorage.SetCounter(metric.ID, *metric.Delta)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
@@ -305,7 +314,8 @@ func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Requ
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	db := h.db
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	cont := h.context
+	ctx, cancel := context.WithTimeout(cont, 1*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -313,10 +323,11 @@ func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 }
-func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
+func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, db *sql.DB) {
 	h := Handler{
 		MemStorage: metrics,
 		db:         db,
+		context:    ctx,
 	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
@@ -327,9 +338,9 @@ func Routers(handler chi.Router, metrics *storage.Storage, db *sql.DB) {
 	handler.Get("/ping", h.PingHandler)
 }
 
-func Run(url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
+func Run(ctx context.Context, url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
-	Routers(handler, metrics, db)
+	Routers(ctx, handler, metrics, db)
 	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }

@@ -3,6 +3,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
@@ -25,10 +26,11 @@ func dbConnect() *sql.DB {
 func TestGetMetricValueHandler(t *testing.T) {
 	// Create a test storage
 	m := storage.NewStorage()
+	ctx := context.Background()
 	// Create a test router
 	r := chi.NewRouter()
 	f := dbConnect()
-	Routers(r, m, f)
+	Routers(ctx, r, m, f)
 
 	// Add a test metric value to the storage
 	m.Gauge["test"] = 10.5
@@ -50,11 +52,12 @@ func TestGetMetricValueHandler(t *testing.T) {
 func TestGetAllMetricsHandler(t *testing.T) {
 	// Create a test storage
 	m := storage.NewStorage()
+	ctx := context.Background()
 	// Create a test router
 	r := chi.NewRouter()
 	f := dbConnect()
 
-	Routers(r, m, f)
+	Routers(ctx, r, m, f)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/", nil)
@@ -170,16 +173,17 @@ func TestRun(t *testing.T) {
 	// Create a test storage
 	m := storage.NewStorage()
 	url := "localhost:8080"
+	ctx := context.Background()
 
 	// Create a test router
 	r := chi.NewRouter()
 	f := dbConnect()
 
-	Routers(r, m, f)
+	Routers(ctx, r, m, f)
 
 	// Start the server
 	go func() {
-		err := Run(url, r, m, f)
+		err := Run(ctx, url, r, m, f)
 		assert.NoError(t, err)
 	}()
 	req, err := http.NewRequest("POST", "/update/gauge/test/10.0", nil)

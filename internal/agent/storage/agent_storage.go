@@ -25,6 +25,7 @@ func (m *MemStorage) String() string {
 }
 func (m *MemStorage) SetStorage(rand float64) {
 	m.Mutex.Lock()
+	defer m.Mutex.Unlock()
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -58,7 +59,6 @@ func (m *MemStorage) SetStorage(rand float64) {
 		"TotalAlloc":    float64(memStats.TotalAlloc),
 		"RandomValue":   rand,
 	}
-	m.Mutex.Unlock()
 }
 
 func (m *MemStorage) SetCounter(count int64) {
