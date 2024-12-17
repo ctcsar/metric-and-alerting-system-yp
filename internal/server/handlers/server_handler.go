@@ -27,7 +27,6 @@ type Metrics struct {
 type Handler struct {
 	MemStorage *storage.Storage
 	db         *sql.DB
-	context    context.Context
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -314,8 +313,8 @@ func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Requ
 
 func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	db := h.db
-	cont := h.context
-	ctx, cancel := context.WithTimeout(cont, 1*time.Second)
+	cont := context.Background()
+	ctx, cancel := context.WithTimeout(cont, 30*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -327,7 +326,6 @@ func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, 
 	h := Handler{
 		MemStorage: metrics,
 		db:         db,
-		context:    ctx,
 	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
