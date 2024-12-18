@@ -38,7 +38,7 @@ func main() {
 			if metrics.Gauge != nil || metrics.Counter != nil {
 				err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics)
 				if err != nil {
-					logger.Log.Error("cannot send metric:", zap.Error(err))
+					logger.Log.Info("cannot send metric:", zap.Error(err))
 					return
 				}
 			}
