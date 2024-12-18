@@ -63,9 +63,9 @@ jobs:
           cd cmd/server
           go build -buildvcs=false -o server
 
-      - name: Run migrations
-        run: |
-          goose -dir ./migrations postgres "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable" up
+      # - name: Run migrations
+      #   run: |
+      #     goose -dir ./migrations postgres "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable" up
 
       - name: "Code increment #1"
         run: |
