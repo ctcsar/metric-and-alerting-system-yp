@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgerrcode"
-	"github.com/pressly/goose"
+	"github.com/jackc/pgx"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
-	"github.com/jackc/pgx"
 )
 
 const (
@@ -69,7 +68,19 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 }
 
 func DBCreateTables(db *sql.DB) error {
-	err := goose.Up(db, "../../migrations")
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS gauge_metrics (
+		name text,
+		value float8,
+		PRIMARY KEY (name)
+	);`)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS counter_metrics (
+		name text,
+		value int8,
+		PRIMARY KEY (name)
+	);`)
 	if err != nil {
 		return err
 	}
