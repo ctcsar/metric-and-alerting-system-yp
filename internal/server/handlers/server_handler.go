@@ -310,10 +310,10 @@ func (h Handler) PingHandler(ctx context.Context, w http.ResponseWriter, r *http
 	}
 	w.WriteHeader(http.StatusOK)
 }
-func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, db *sql.DB) {
+func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage) {
 	h := Handler{
 		MemStorage: metrics,
-		db:         db,
+		// db:         db,
 	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
@@ -326,9 +326,9 @@ func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, 
 	})
 }
 
-func Run(ctx context.Context, url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
+func Run(ctx context.Context, url string, handler chi.Router, metrics *storage.Storage) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
-	Routers(ctx, handler, metrics, db)
+	Routers(ctx, handler, metrics)
 	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }
