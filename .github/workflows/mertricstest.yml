@@ -62,6 +62,10 @@ jobs:
           cd cmd/server
           go build -buildvcs=false -o server
 
+      - name: Run migrations
+        run: |
+          goose -dir ./migrations postgres "postgres://metrics:password@localhost:5432/metrics?sslmode=disable" up
+
       - name: "Code increment #1"
         run: |
           metricstest -test.v -test.run=^TestIteration1$ \
