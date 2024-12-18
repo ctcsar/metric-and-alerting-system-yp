@@ -23,7 +23,8 @@ func main() {
 	memStorage := storage.MemStorage{}
 	flags.SetAgentFlags()
 	flag.Parse()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go memStorage.GetMetrics(flags.GetMetricsGetDuration())
