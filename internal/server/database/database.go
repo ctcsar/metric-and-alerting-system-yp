@@ -63,6 +63,22 @@ func DBConnect(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+func DBCreateTables(ctx context.Context, db *sql.DB) error {
+	return retryQuery(ctx, func() error {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS gauge_metrics (
+				name VARCHAR(255) PRIMARY KEY,
+				value FLOAT
+			);
+			CREATE TABLE IF NOT EXISTS counter_metrics (
+				name VARCHAR(255) PRIMARY KEY,
+				value BIGINT
+			);
+		`)
+		return err
+	})
+}
+
 func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
 
 	tx, err := db.BeginTx(ctx, nil)
