@@ -23,8 +23,7 @@ func main() {
 	memStorage := storage.MemStorage{}
 	flags.SetAgentFlags()
 	flag.Parse()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx := context.Background()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go memStorage.GetMetrics(flags.GetMetricsGetDuration())
@@ -38,7 +37,7 @@ func main() {
 			if metrics.Gauge != nil || metrics.Counter != nil {
 				err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics)
 				if err != nil {
-					logger.Log.Info("cannot send metric:", zap.Error(err))
+					logger.Log.Error("cannot send metric:", zap.Error(err))
 					return
 				}
 			}
