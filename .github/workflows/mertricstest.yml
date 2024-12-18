@@ -55,11 +55,6 @@ jobs:
       - name: Setup go deps
         run: |
           go install golang.org/x/tools/cmd/goimports@latest
-          go install github.com/pressly/goose/v3/cmd/goose@latest
-
-      - name: Run migrations
-        run: |
-          goose -dir ./migrations postgres "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable" up
 
       - name: Build server binary
         run: |
