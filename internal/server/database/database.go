@@ -55,8 +55,12 @@ func retryQuery(ctx context.Context, query func() error) error {
 	return errors.New("failed after max retries")
 }
 
-func DBConnect(dsn string) (*sql.DB, error) {
+func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return nil, err
+	}
+	err = DBCreateTables(ctx, db)
 	if err != nil {
 		return nil, err
 	}

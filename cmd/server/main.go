@@ -36,7 +36,7 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
-	db, err := database.DBConnect(flags.GetDatabasePath())
+	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
