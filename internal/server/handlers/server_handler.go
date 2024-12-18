@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -27,7 +26,6 @@ type Metrics struct {
 type Handler struct {
 	MemStorage *storage.Storage
 	db         *sql.DB
-	context    context.Context
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -304,11 +302,8 @@ func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h Handler) PingHandler(w http.ResponseWriter, r *http.Request) {
+func (h Handler) PingHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	db := h.db
-	cont := h.context
-	ctx, cancel := context.WithTimeout(cont, 1*time.Second)
-	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -319,7 +314,6 @@ func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, 
 	h := Handler{
 		MemStorage: metrics,
 		db:         db,
-		context:    ctx,
 	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
@@ -327,7 +321,9 @@ func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, 
 	handler.Post("/update/", h.JSONUpdateHandler)
 	handler.Post("/updates/", h.JSONUpdateAllMetricsHandler)
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
-	handler.Get("/ping", h.PingHandler)
+	handler.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		h.PingHandler(ctx, w, r)
+	})
 }
 
 func Run(ctx context.Context, url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
