@@ -56,7 +56,7 @@ func retryQuery(ctx context.Context, query func() error) error {
 	return errors.New("failed after max retries")
 }
 
-func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
+func DBConnect(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-func DBCreateTables(db *sql.DB) error {
+func DBMigrate(db *sql.DB) error {
 	err := goose.Up(db, "../../migrations")
 	if err != nil {
 		return err

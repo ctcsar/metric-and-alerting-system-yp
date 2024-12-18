@@ -34,9 +34,13 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
-	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
+	db, err := database.DBConnect(flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
+	}
+	err = database.DBMigrate(db)
+	if err != nil {
+		logger.Log.Fatal("cannot migrate database", zap.Error(err))
 	}
 
 	if flags.GetRestore() {
