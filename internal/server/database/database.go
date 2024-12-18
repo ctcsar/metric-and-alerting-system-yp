@@ -61,14 +61,14 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = DBCreateTables(ctx, db)
+	err = DBCreateTables(db)
 	if err != nil {
 		return nil, err
 	}
 	return db, nil
 }
 
-func DBCreateTables(ctx context.Context, db *sql.DB) error {
+func DBCreateTables(db *sql.DB) error {
 	err := goose.Up(db, "../../migrations")
 	if err != nil {
 		return err
