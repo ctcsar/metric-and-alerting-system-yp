@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx"
+	"github.com/pressly/goose"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
@@ -60,6 +61,8 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
+
 	err = DBCreateTables(db)
 	if err != nil {
 		return nil, err
@@ -68,19 +71,7 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 }
 
 func DBCreateTables(db *sql.DB) error {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS gauge_metrics (
-		name text,
-		value float8,
-		PRIMARY KEY (name)
-	);`)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS counter_metrics (
-		name text,
-		value int8,
-		PRIMARY KEY (name)
-	);`)
+	err := goose.Up(db, "../../migrations")
 	if err != nil {
 		return err
 	}

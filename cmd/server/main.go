@@ -38,7 +38,6 @@ func main() {
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
-	defer db.Close()
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
