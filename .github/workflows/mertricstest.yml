@@ -65,7 +65,7 @@ jobs:
 
       - name: Run migrations
         run: |
-          goose -dir ./migrations postgres "postgres://metrics:password@localhost:5432/metrics?sslmode=disable" up
+          goose -dir ./migrations postgres "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable" up
 
       - name: "Code increment #1"
         run: |
