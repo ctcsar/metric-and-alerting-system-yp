@@ -63,10 +63,6 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 	}
 	defer db.Close()
 
-	err = DBCreateTables(db)
-	if err != nil {
-		return nil, err
-	}
 	return db, nil
 }
 
