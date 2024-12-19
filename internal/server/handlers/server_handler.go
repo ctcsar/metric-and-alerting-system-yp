@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/compress"
@@ -23,6 +25,7 @@ type Metrics struct {
 
 type Handler struct {
 	MemStorage *storage.Storage
+	db         *sql.DB
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -268,18 +271,64 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Routers(handler chi.Router, metrics *storage.Storage) {
-	h := Handler{MemStorage: metrics}
+func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var buff []Metrics
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&buff)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	for _, metric := range buff {
+		switch metric.MType {
+		case "gauge":
+			err = h.MemStorage.SetGauge(metric.ID, *metric.Value)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		case "counter":
+			err = h.MemStorage.SetCounter(metric.ID, *metric.Delta)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h Handler) PingHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	db := h.db
+	if err := db.PingContext(ctx); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, db *sql.DB) {
+	h := Handler{
+		MemStorage: metrics,
+		db:         db,
+	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
 	handler.Post("/update/", h.JSONUpdateHandler)
+	handler.Post("/updates/", h.JSONUpdateAllMetricsHandler)
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
+	handler.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		h.PingHandler(ctx, w, r)
+	})
 }
 
-func Run(url string, handler chi.Router, metrics *storage.Storage) error {
+func Run(ctx context.Context, url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
-	Routers(handler, metrics)
+	Routers(ctx, handler, metrics, db)
 	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }
