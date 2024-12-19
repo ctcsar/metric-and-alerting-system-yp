@@ -92,14 +92,20 @@ func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) er
 		}
 	}()
 	for k, v := range metrics.Gauge {
-		_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+		err = retryQuery(ctx, func() error {
+			_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+			return err
+		})
 		if err != nil {
 			return fmt.Errorf("error inserting gauge metric: %w", err)
 		}
 	}
 
 	for k, v := range metrics.Counter {
-		_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+		err = retryQuery(ctx, func() error {
+			_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
+			return err
+		})
 		if err != nil {
 			return fmt.Errorf("error inserting counter metric: %w", err)
 		}

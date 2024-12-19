@@ -63,7 +63,7 @@ func main() {
 				}
 				err := database.DBSaveMetrics(ctx, db, metrics)
 				if err != nil {
-					logger.Log.Error("cannot save metrics to database", zap.Error(err))
+					logger.Log.Info("cannot save metrics to database", zap.Error(err))
 					return
 				}
 				os.Exit(0)
@@ -75,7 +75,7 @@ func main() {
 				}
 				err := database.DBSaveMetrics(ctx, db, metrics)
 				if err != nil {
-					logger.Log.Error("cannot save metrics to database", zap.Error(err))
+					logger.Log.Info("cannot save metrics to database", zap.Error(err))
 					return
 				}
 			}
