@@ -40,6 +40,7 @@ func main() {
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
+	defer db.Close()
 
 	err = database.DBMigrate(ctx, db)
 	if err != nil {
