@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"net/url"
 	"os"
@@ -34,10 +35,16 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
-	db, err := database.DBConnect(flags.GetDatabasePath())
+	db, err := sql.Open("pgx", flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
+	defer db.Close()
+
+	// db, err := database.DBConnect(flags.GetDatabasePath())
+	// if err != nil {
+	// 	logger.Log.Fatal("cannot connect to database", zap.Error(err))
+	// }
 	err = database.DBMigrate(db)
 	if err != nil {
 		logger.Log.Fatal("cannot migrate database", zap.Error(err))
