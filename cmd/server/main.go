@@ -38,12 +38,12 @@ func main() {
 	}
 	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
 	if err != nil {
-		logger.Log.Fatal("cannot connect to database", zap.Error(err))
+		logger.Log.Info("cannot connect to database", zap.Error(err))
 	}
 
 	err = database.DBMigrate(ctx, db)
 	if err != nil {
-		logger.Log.Error("cannot create table", zap.Error(err))
+		logger.Log.Info("cannot create table", zap.Error(err))
 	}
 
 	if flags.GetRestore() {
@@ -67,7 +67,6 @@ func main() {
 					return
 				}
 				os.Exit(0)
-				cancel()
 			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
