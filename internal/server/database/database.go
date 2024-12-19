@@ -91,7 +91,8 @@ func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) er
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("error inserting gauge metric: %w", err)
+			log.Println("Error inserting gauge metric:", err)
+			continue
 		}
 	}
 
@@ -101,9 +102,12 @@ func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) er
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("error inserting counter metric: %w", err)
+			log.Println("Error inserting counter metric:", err)
+			continue
 		}
 	}
-
+	if err != nil {
+		return fmt.Errorf("error saving metrics: %w", err)
+	}
 	return nil
 }
