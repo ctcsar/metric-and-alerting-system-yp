@@ -26,7 +26,6 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	// ctx := context.Background()
 
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
