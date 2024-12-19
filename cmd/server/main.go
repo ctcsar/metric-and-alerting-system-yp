@@ -38,13 +38,13 @@ func main() {
 	}
 	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
 	if err != nil {
-		logger.Log.Info("cannot connect to database", zap.Error(err))
+		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
 
-	err = database.DBMigrate(ctx, db)
-	if err != nil {
-		logger.Log.Info("cannot create table", zap.Error(err))
-	}
+	// err = database.DBMigrate(ctx, db)
+	// if err != nil {
+	// 	logger.Log.Error("cannot create table", zap.Error(err))
+	// }
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
