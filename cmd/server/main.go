@@ -24,9 +24,8 @@ import (
 func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// defer cancel()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
@@ -68,6 +67,7 @@ func main() {
 					return
 				}
 				os.Exit(0)
+				cancel()
 			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
