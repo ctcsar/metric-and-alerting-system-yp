@@ -24,8 +24,9 @@ import (
 func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+	ctx := context.Background()
 
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
@@ -40,6 +41,7 @@ func main() {
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
+	defer db.Close()
 
 	err = database.DBMigrate(ctx, db)
 	if err != nil {
