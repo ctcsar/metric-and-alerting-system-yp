@@ -1,18 +1,21 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/go-chi/chi"
+	_ "github.com/jackc/pgx/v5/stdlib"
+
+	chi "github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/files"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
+	database "github.com/ctcsar/metric-and-alerting-system-yp/internal/server/database"
 	f "github.com/ctcsar/metric-and-alerting-system-yp/internal/server/flags"
 	h "github.com/ctcsar/metric-and-alerting-system-yp/internal/server/handlers"
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
@@ -21,6 +24,8 @@ import (
 func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
@@ -30,6 +35,15 @@ func main() {
 	file := files.NewFile()
 	url := url.URL{
 		Host: flags.GetServerURL(),
+	}
+	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
+	if err != nil {
+		logger.Log.Fatal("cannot connect to database", zap.Error(err))
+	}
+
+	err = database.DBMigrate(ctx, db)
+	if err != nil {
+		logger.Log.Error("cannot create table", zap.Error(err))
 	}
 
 	if flags.GetRestore() {
@@ -42,23 +56,34 @@ func main() {
 		for {
 			select {
 			case <-c:
-				err := file.WriteFile(metrics, flags.GetStoragePath())
+				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
-					fmt.Println(err)
+					logger.Log.Warn("cannot save to file", zap.Error(err))
+					return
+				}
+				err := database.DBSaveMetrics(ctx, db, metrics)
+				if err != nil {
+					logger.Log.Error("cannot save metrics to database", zap.Error(err))
+					return
 				}
 				os.Exit(0)
 			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
-				err := file.WriteFile(metrics, flags.GetStoragePath())
+				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
-					fmt.Println(err)
+					logger.Log.Warn("cannot save to file", zap.Error(err))
+					return
+				}
+				err := database.DBSaveMetrics(ctx, db, metrics)
+				if err != nil {
+					logger.Log.Error("cannot save metrics to database", zap.Error(err))
 					return
 				}
 			}
 		}
 	}()
 
-	if err := h.Run(url.Host, handler, metrics); err != nil {
-		fmt.Println(err)
+	if err := h.Run(ctx, url.Host, handler, metrics, db); err != nil {
+		logger.Log.Fatal("cannot run handlers", zap.Error(err))
 		return
 	}
 }
