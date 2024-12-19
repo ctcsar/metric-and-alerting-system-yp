@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"net/url"
 	"os"
@@ -25,7 +24,9 @@ import (
 func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
 	flags := f.NewServerFlags()
@@ -35,19 +36,14 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
-	db, err := sql.Open("pgx", flags.GetDatabasePath())
+	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
-	defer db.Close()
 
-	// db, err := database.DBConnect(flags.GetDatabasePath())
-	// if err != nil {
-	// 	logger.Log.Fatal("cannot connect to database", zap.Error(err))
-	// }
-	err = database.DBMigrate(db)
+	err = database.DBMigrate(ctx, db)
 	if err != nil {
-		logger.Log.Fatal("cannot migrate database", zap.Error(err))
+		logger.Log.Error("cannot create table", zap.Error(err))
 	}
 
 	if flags.GetRestore() {
