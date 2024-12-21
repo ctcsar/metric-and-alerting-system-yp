@@ -3,54 +3,50 @@ package server
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
-	"time"
 
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx"
 	"github.com/pressly/goose"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
 
-const (
-	maxRetries = 3
-)
+// const (
+// 	maxRetries = 3
+// )
 
-var retryDelays = []time.Duration{
-	1 * time.Second,
-	3 * time.Second,
-	5 * time.Second,
-}
+// var retryDelays = []time.Duration{
+// 	1 * time.Second,
+// 	3 * time.Second,
+// 	5 * time.Second,
+// }
 
-func isRetriableError(err error) bool {
-	var pgErr *pgx.PgError
-	if errors.As(err, &pgErr) {
-		if pgErr.Code == pgerrcode.ConnectionDoesNotExist {
-			return true
-		}
-		if pgErr.Code == pgerrcode.ConnectionException {
-			return true
-		}
-	}
-	return false
-}
+// func isRetriableError(err error) bool {
+// 	var pgErr *pgx.PgError
+// 	if errors.As(err, &pgErr) {
+// 		if pgErr.Code == pgerrcode.ConnectionDoesNotExist {
+// 			return true
+// 		}
+// 		if pgErr.Code == pgerrcode.ConnectionException {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
-func retryQuery(query func() error) error {
-	for i := 0; i < maxRetries; i++ {
-		err := query()
-		if err == nil {
-			return nil
-		}
-		if !isRetriableError(err) {
-			return err
-		}
-		time.Sleep(retryDelays[i])
-	}
-	return errors.New("failed after max retries")
-}
+// func retryQuery(query func() error) error {
+// 	for i := 0; i < maxRetries; i++ {
+// 		err := query()
+// 		if err == nil {
+// 			return nil
+// 		}
+// 		if !isRetriableError(err) {
+// 			return err
+// 		}
+// 		time.Sleep(retryDelays[i])
+// 	}
+// 	return errors.New("failed after max retries")
+// }
 
 func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
@@ -58,6 +54,10 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 		return nil, err
 	}
 	defer db.Close()
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
 
 	return db, nil
 }
@@ -71,6 +71,9 @@ func DBMigrate(ctx context.Context, db *sql.DB) error {
 }
 
 func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
+	if ctx.Err() != nil {
+		return fmt.Errorf("context expired before transaction start: %w", ctx.Err())
+	}
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -88,10 +91,7 @@ func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) er
 		}
 	}()
 	for k, v := range metrics.Gauge {
-		err = retryQuery(func() error {
-			_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
-			return err
-		})
+		_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
 		if err != nil {
 			log.Println("Error inserting gauge metric:", err)
 			continue
@@ -99,10 +99,7 @@ func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) er
 	}
 
 	for k, v := range metrics.Counter {
-		err = retryQuery(func() error {
-			_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
-			return err
-		})
+		_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
 		if err != nil {
 			log.Println("Error inserting counter metric:", err)
 			continue
