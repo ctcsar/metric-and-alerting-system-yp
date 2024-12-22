@@ -71,46 +71,6 @@ func DBMigrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
-// 	if ctx.Err() != nil {
-// 		return fmt.Errorf("context expired before transaction start: %w", ctx.Err())
-// 	}
-
-// 	tx, err := db.BeginTx(ctx, nil)
-// 	if err != nil {
-// 		return fmt.Errorf("cannot start transaction: %w", err)
-// 	}
-
-// 	defer func() {
-// 		if err != nil {
-// 			rbErr := tx.Rollback()
-// 			if rbErr != nil {
-// 				log.Println("Rollback error:", rbErr)
-// 			}
-// 		} else {
-// 			err = tx.Commit()
-// 		}
-// 	}()
-// 	for k, v := range metrics.Gauge {
-// 		_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
-// 		if err != nil {
-// 			log.Println("Error inserting gauge metric:", err)
-// 			continue
-// 		}
-// 	}
-
-//		for k, v := range metrics.Counter {
-//			_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
-//			if err != nil {
-//				log.Println("Error inserting counter metric:", err)
-//				continue
-//			}
-//		}
-//		if err != nil {
-//			return fmt.Errorf("error saving metrics: %w", err)
-//		}
-//		return nil
-//	}
 func insertMetrics(ctx context.Context, tx *sql.Tx, tableName string, metrics map[string]interface{}) error {
 	placeholders := []string{}
 	args := []interface{}{}
@@ -135,6 +95,9 @@ func insertMetrics(ctx context.Context, tx *sql.Tx, tableName string, metrics ma
 	return nil
 }
 func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
+	if ctx.Err() != nil {
+		return fmt.Errorf("context expired before transaction start: %w", ctx.Err())
+	}
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("cannot start transaction: %w", err)
@@ -151,11 +114,9 @@ func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) er
 		}
 	}()
 
-	// Защищаем чтение данных мьютексом
 	metrics.Mutex.RLock()
 	defer metrics.Mutex.RUnlock()
 
-	// Конвертируем метрики для универсальной вставки
 	gaugeMetrics := map[string]interface{}{}
 	for k, v := range metrics.Gauge {
 		gaugeMetrics[k] = v
@@ -166,7 +127,6 @@ func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) er
 		counterMetrics[k] = v
 	}
 
-	// Вставляем метрики
 	err = insertMetrics(ctx, tx, "gauge_metrics", gaugeMetrics)
 	if err != nil {
 		return err
