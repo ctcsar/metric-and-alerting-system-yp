@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -23,7 +24,7 @@ import (
 
 func main() {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	ctx := context.Background()
 
 	metrics := storage.NewStorage()
@@ -35,6 +36,7 @@ func main() {
 	url := url.URL{
 		Host: flags.GetServerURL(),
 	}
+	ticker := time.NewTicker(time.Duration(flags.GetStoreInterval()) * time.Second)
 	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
@@ -67,7 +69,7 @@ func main() {
 					return
 				}
 				os.Exit(0)
-			case <-time.After(time.Duration(flags.GetStoreInterval()) * time.Second):
+			case <-ticker.C:
 				err = file.WriteFile(metrics, flags.GetStoragePath())
 				if err != nil {
 					logger.Log.Warn("cannot save to file", zap.Error(err))
