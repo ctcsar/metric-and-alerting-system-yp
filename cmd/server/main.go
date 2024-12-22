@@ -43,10 +43,10 @@ func main() {
 	}
 	defer db.Close()
 
-	err = database.DBMigrate(ctx, db)
-	if err != nil {
-		logger.Log.Error("cannot create table", zap.Error(err))
-	}
+	// err = database.DBMigrate(ctx, db)
+	// if err != nil {
+	// 	logger.Log.Error("cannot create table", zap.Error(err))
+	// }
 
 	if flags.GetRestore() {
 		err := file.ReadFromFile(flags.GetStoragePath(), metrics)
