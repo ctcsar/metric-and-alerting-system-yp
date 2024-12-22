@@ -26,8 +26,8 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(c)
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
+	ctx := context.Background()
+
 	metrics := storage.NewStorage()
 	handler := chi.NewRouter()
 	flags := f.NewServerFlags()

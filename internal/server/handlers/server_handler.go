@@ -25,7 +25,6 @@ type Metrics struct {
 
 type Handler struct {
 	MemStorage *storage.Storage
-	db         *sql.DB
 }
 
 func NewHandler(metrics *storage.Storage) *Handler {
@@ -302,8 +301,7 @@ func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h Handler) PingHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	db := h.db
+func (h Handler) PingHandler(ctx context.Context, db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	if err := db.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -313,7 +311,6 @@ func (h Handler) PingHandler(ctx context.Context, w http.ResponseWriter, r *http
 func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, db *sql.DB) {
 	h := Handler{
 		MemStorage: metrics,
-		db:         db,
 	}
 	handler.Get("/value/{type}/{name}", h.GetMetricValueHandler)
 	handler.Get("/", h.GetAllMetricsHandler)
@@ -322,7 +319,7 @@ func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, 
 	handler.Post("/updates/", h.JSONUpdateAllMetricsHandler)
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
 	handler.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-		h.PingHandler(ctx, w, r)
+		h.PingHandler(ctx, db, w, r)
 	})
 }
 
