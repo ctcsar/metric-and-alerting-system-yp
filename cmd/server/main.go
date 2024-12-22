@@ -64,11 +64,11 @@ func main() {
 					logger.Log.Warn("cannot save to file", zap.Error(err))
 					return
 				}
-				err := database.DBSaveMetrics(ctx, db, metrics)
-				if err != nil {
-					logger.Log.Error("cannot save metrics to database", zap.Error(err))
-					return
-				}
+				// err := database.DBSaveMetrics(ctx, db, metrics)
+				// if err != nil {
+				// 	logger.Log.Error("cannot save metrics to database", zap.Error(err))
+				// 	return
+				// }
 				os.Exit(0)
 			case <-ticker.C:
 				err = file.WriteFile(metrics, flags.GetStoragePath())
@@ -76,11 +76,11 @@ func main() {
 					logger.Log.Warn("cannot save to file", zap.Error(err))
 					return
 				}
-				err := database.DBSaveMetrics(ctx, db, metrics)
-				if err != nil {
-					logger.Log.Error("cannot save metrics to database", zap.Error(err))
-					return
-				}
+				// err := database.DBSaveMetrics(ctx, db, metrics)
+				// if err != nil {
+				// 	logger.Log.Error("cannot save metrics to database", zap.Error(err))
+				// 	return
+				// }
 			}
 		}
 	}()
