@@ -43,13 +43,9 @@ func main() {
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
-	// db, err := database.DBConnect(ctx, flags.GetDatabasePath())
-	// if err != nil {
-	// 	logger.Log.Fatal("cannot connect to database", zap.Error(err))
-	// }
 	defer db.Close()
 
-	err = database.DBMigrate(ctx, db)
+	err = database.DBCreateTables(ctx, db)
 	if err != nil {
 		logger.Log.Error("cannot create table", zap.Error(err))
 	}
