@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
-	"github.com/pressly/goose"
 )
 
 // const (
@@ -62,22 +61,22 @@ func DBConnect(ctx context.Context, dsn string) (*sql.DB, error) {
 }
 
 func DBMigrate(ctx context.Context, db *sql.DB) error {
-	err := goose.Up(db, "../../migrations")
-	if err != nil {
-		return err
-	}
-	return nil
-	// exec := `CREATE TABLE IF NOT EXISTS counter_metrics (
-	// 	name text NOT NULL UNIQUE,
-	// 	value bigint NOT NULL
-	// 	);
+	// err := goose.Up(db, "../../migrations")
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	exec := `CREATE TABLE IF NOT EXISTS counter_metrics (
+		name text NOT NULL UNIQUE,
+		value bigint NOT NULL
+		);
 
-	// 	CREATE TABLE IF NOT EXISTS gauge_metrics (
-	// 	name text NOT NULL UNIQUE,
-	// 	value double precision NOT NULL
-	// 	);`
-	// _, err := db.Exec(exec)
-	// return err
+		CREATE TABLE IF NOT EXISTS gauge_metrics (
+		name text NOT NULL UNIQUE,
+		value double precision NOT NULL
+		);`
+	_, err := db.Exec(exec)
+	return err
 }
 
 func insertMetrics(ctx context.Context, tx *sql.Tx, tableName string, metrics map[string]interface{}) error {
