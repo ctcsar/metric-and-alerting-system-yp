@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"net/url"
 	"os"
@@ -38,10 +39,14 @@ func main() {
 		Host: flags.GetServerURL(),
 	}
 	ticker := time.NewTicker(time.Duration(flags.GetStoreInterval()) * time.Second)
-	db, err := database.DBConnect(ctx, flags.GetDatabasePath())
+	db, err := sql.Open("pgx", flags.GetDatabasePath())
 	if err != nil {
 		logger.Log.Fatal("cannot connect to database", zap.Error(err))
 	}
+	// db, err := database.DBConnect(ctx, flags.GetDatabasePath())
+	// if err != nil {
+	// 	logger.Log.Fatal("cannot connect to database", zap.Error(err))
+	// }
 	defer db.Close()
 
 	err = database.DBMigrate(ctx, db)
