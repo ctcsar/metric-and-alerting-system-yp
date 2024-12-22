@@ -77,7 +77,7 @@ func DBMigrate(ctx context.Context, db *sql.DB) error {
 	_, err := db.Exec(exec)
 	return err
 }
-func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
+func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
 
 	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
