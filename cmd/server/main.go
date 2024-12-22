@@ -71,8 +71,7 @@ func main() {
 				}
 				err := database.DBSaveMetrics(ctx, db, metrics)
 				if err != nil {
-					logger.Log.Warn("cannot save metrics to database", zap.Error(err))
-					return
+					logger.Log.Error("cannot save metrics to database", zap.Error(err))
 				}
 				os.Exit(0)
 			case <-ticker.C:
@@ -83,8 +82,7 @@ func main() {
 				}
 				err := database.DBSaveMetrics(ctx, db, metrics)
 				if err != nil {
-					logger.Log.Warn("cannot save metrics to database", zap.Error(err))
-					return
+					logger.Log.Error("cannot save metrics to database", zap.Error(err))
 				}
 			}
 		}
