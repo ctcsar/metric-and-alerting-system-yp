@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/ctcsar/metric-and-alerting-system-yp/internal/server/storage"
 )
@@ -77,11 +78,37 @@ func DBMigrate(ctx context.Context, db *sql.DB) error {
 	_, err := db.Exec(exec)
 	return err
 }
-func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
 
-	tx, err := db.BeginTx(context.Background(), nil)
+func insertMetrics(ctx context.Context, tx *sql.Tx, tableName string, metrics map[string]interface{}) error {
+	placeholders := []string{}
+	args := []interface{}{}
+	argIndex := 1
+
+	for k, v := range metrics {
+		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d)", argIndex, argIndex+1))
+		args = append(args, k, v)
+		argIndex += 2
+	}
+
+	query := fmt.Sprintf(
+		"INSERT INTO %s (name, value) VALUES %s ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
+		tableName,
+		strings.Join(placeholders, ", "),
+	)
+
+	_, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to insert metrics into %s: %w", tableName, err)
+	}
+	return nil
+}
+func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
+	if ctx.Err() != nil {
+		return fmt.Errorf("context expired before transaction start: %w", ctx.Err())
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("cannot start transaction: %w", err)
 	}
 
 	defer func() {
@@ -94,89 +121,29 @@ func DBSaveMetrics(db *sql.DB, metrics *storage.Storage) error {
 			err = tx.Commit()
 		}
 	}()
-	for k, v := range metrics.Gauge {
 
-		_, err = tx.Exec("INSERT INTO gauge_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
-		if err != nil {
-			return fmt.Errorf("error inserting gauge metric: %w", err)
-		}
+	metrics.Mutex.RLock()
+	defer metrics.Mutex.RUnlock()
+
+	gaugeMetrics := map[string]interface{}{}
+	for k, v := range metrics.Gauge {
+		gaugeMetrics[k] = v
 	}
 
+	counterMetrics := map[string]interface{}{}
 	for k, v := range metrics.Counter {
-		_, err := tx.Exec("INSERT INTO counter_metrics VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET value = $2", k, v)
-		if err != nil {
-			return fmt.Errorf("error inserting counter metric: %w", err)
-		}
+		counterMetrics[k] = v
+	}
+
+	err = insertMetrics(ctx, tx, "gauge_metrics", gaugeMetrics)
+	if err != nil {
+		return err
+	}
+
+	err = insertMetrics(ctx, tx, "counter_metrics", counterMetrics)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
-
-// func insertMetrics(ctx context.Context, tx *sql.Tx, tableName string, metrics map[string]interface{}) error {
-// 	placeholders := []string{}
-// 	args := []interface{}{}
-// 	argIndex := 1
-
-// 	for k, v := range metrics {
-// 		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d)", argIndex, argIndex+1))
-// 		args = append(args, k, v)
-// 		argIndex += 2
-// 	}
-
-// 	query := fmt.Sprintf(
-// 		"INSERT INTO %s (name, value) VALUES %s ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-// 		tableName,
-// 		strings.Join(placeholders, ", "),
-// 	)
-
-// 	_, err := tx.ExecContext(ctx, query, args...)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to insert metrics into %s: %w", tableName, err)
-// 	}
-// 	return nil
-// }
-// func DBSaveMetrics(ctx context.Context, db *sql.DB, metrics *storage.Storage) error {
-// 	if ctx.Err() != nil {
-// 		return fmt.Errorf("context expired before transaction start: %w", ctx.Err())
-// 	}
-// 	tx, err := db.BeginTx(ctx, nil)
-// 	if err != nil {
-// 		return fmt.Errorf("cannot start transaction: %w", err)
-// 	}
-
-// 	defer func() {
-// 		if err != nil {
-// 			rbErr := tx.Rollback()
-// 			if rbErr != nil {
-// 				log.Println("Rollback error:", rbErr)
-// 			}
-// 		} else {
-// 			err = tx.Commit()
-// 		}
-// 	}()
-
-// 	metrics.Mutex.RLock()
-// 	defer metrics.Mutex.RUnlock()
-
-// 	gaugeMetrics := map[string]interface{}{}
-// 	for k, v := range metrics.Gauge {
-// 		gaugeMetrics[k] = v
-// 	}
-
-// 	counterMetrics := map[string]interface{}{}
-// 	for k, v := range metrics.Counter {
-// 		counterMetrics[k] = v
-// 	}
-
-// 	err = insertMetrics(ctx, tx, "gauge_metrics", gaugeMetrics)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	err = insertMetrics(ctx, tx, "counter_metrics", counterMetrics)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
