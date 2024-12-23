@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +11,8 @@ import (
 	f "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/flags"
 	handlers "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/handlers"
 	storage "github.com/ctcsar/metric-and-alerting-system-yp/internal/agent/storage"
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
+	"go.uber.org/zap"
 )
 
 const GaugeMetricsType = "gauge"
@@ -20,6 +23,7 @@ func main() {
 	memStorage := storage.MemStorage{}
 	flags.SetAgentFlags()
 	flag.Parse()
+	ctx := context.Background()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go memStorage.GetMetrics(flags.GetMetricsGetDuration())
@@ -30,17 +34,11 @@ func main() {
 			os.Exit(0)
 		case <-time.After(flags.GetSendDuration() * time.Second):
 			metrics := memStorage.Metrics
-			for k, v := range metrics.Gauge {
-
-				err := handlers.SendMetric(flags.GetURLForSend(), GaugeMetricsType, k, fmt.Sprintf("%f", v))
+			if metrics.Gauge != nil || metrics.Counter != nil {
+				err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics)
 				if err != nil {
-					fmt.Println(err)
-				}
-			}
-			for k, v := range metrics.Counter {
-				err := handlers.SendMetric(flags.GetURLForSend(), CounterMetricsType, k, fmt.Sprintf("%d", v))
-				if err != nil {
-					fmt.Println(err)
+					logger.Log.Error("cannot send metric:", zap.Error(err))
+					return
 				}
 			}
 		}

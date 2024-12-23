@@ -6,11 +6,13 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 	"time"
 )
 
 type MemStorage struct {
 	Metrics Metrics
+	Mutex   sync.RWMutex
 }
 
 type Metrics struct {
@@ -22,6 +24,8 @@ func (m *MemStorage) String() string {
 	return fmt.Sprintf("MemStorage{Metrics: %+v}", m.Metrics)
 }
 func (m *MemStorage) SetStorage(rand float64) {
+	m.Mutex.Lock()
+	defer m.Mutex.Unlock()
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -55,7 +59,6 @@ func (m *MemStorage) SetStorage(rand float64) {
 		"TotalAlloc":    float64(memStats.TotalAlloc),
 		"RandomValue":   rand,
 	}
-
 }
 
 func (m *MemStorage) SetCounter(count int64) {

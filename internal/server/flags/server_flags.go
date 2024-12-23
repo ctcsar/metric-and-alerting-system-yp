@@ -14,6 +14,7 @@ type serverFlags struct {
 	storeInterval int
 	storagePath   string
 	restore       bool
+	databaseDSN   string
 }
 
 func NewServerFlags() *serverFlags {
@@ -27,6 +28,7 @@ func (f *serverFlags) SetServerFlags() {
 	flag.IntVar(&f.storeInterval, "i", 300, "duration to save metrics in file")
 	flag.StringVar(&f.storagePath, "f", "storage.txt", "name of file to save metrics")
 	flag.BoolVar(&f.restore, "r", true, "restore metrics from file")
+	flag.StringVar(&f.databaseDSN, "d", "postgres://metrics:password@localhost:5432/metrics?sslmode=disable", "path to database")
 }
 
 func (f *serverFlags) GetServerURL() string {
@@ -58,4 +60,11 @@ func (f *serverFlags) GetStoreInterval() time.Duration {
 
 func (f *serverFlags) GetRestore() bool {
 	return f.restore
+}
+
+func (f *serverFlags) GetDatabasePath() string {
+	if envDatabaseDSN := os.Getenv("DATABASE_DSN"); envDatabaseDSN != "" {
+		f.databaseDSN = envDatabaseDSN
+	}
+	return f.databaseDSN
 }
