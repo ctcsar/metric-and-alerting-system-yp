@@ -25,7 +25,7 @@ func (f *agentFlags) SetAgentFlags() {
 	flag.StringVar(&f.url, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&f.sendTime, "r", 10, "time in seconds to send metrics")
 	flag.IntVar(&f.getMetricTime, "p", 2, "time in seconds to get metrics")
-	flag.StringVar(&f.key, "k", "secret", "secret key")
+	flag.StringVar(&f.key, "k", "", "secret key")
 }
 func (f agentFlags) GetURLForSend() string {
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {

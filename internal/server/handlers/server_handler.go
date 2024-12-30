@@ -295,13 +295,13 @@ func (h Handler) JSONUpdateAllMetricsHandler(secretKey string, w http.ResponseWr
 	hash := hmac.New(sha256.New, []byte(secretKey))
 	jsonBuff, err := json.Marshal(buff)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	hash.Write(jsonBuff)
 	dst := hash.Sum(nil)
 	if !hmac.Equal(hashData, dst) {
-		w.WriteHeader(http.StatusUnauthorized)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 

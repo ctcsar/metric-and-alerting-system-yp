@@ -30,7 +30,7 @@ func (f *serverFlags) SetServerFlags() {
 	flag.StringVar(&f.storagePath, "f", "storage.txt", "name of file to save metrics")
 	flag.BoolVar(&f.restore, "r", true, "restore metrics from file")
 	flag.StringVar(&f.databaseDSN, "d", "postgres://metrics:password@localhost:5432/metrics?sslmode=disable", "path to database")
-	flag.StringVar(&f.key, "k", "secret", "secret key")
+	flag.StringVar(&f.key, "k", "", "secret key")
 }
 
 func (f *serverFlags) GetServerURL() string {
