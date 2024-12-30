@@ -285,26 +285,27 @@ func (h Handler) JSONUpdateAllMetricsHandler(secretKey string, w http.ResponseWr
 		return
 	}
 
-	respHash := r.Header.Get("HashSHA256")
-	hashData, err := hex.DecodeString(respHash)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	if secretKey != "" {
+		respHash := r.Header.Get("HashSHA256")
+		hashData, err := hex.DecodeString(respHash)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-	hash := hmac.New(sha256.New, []byte(secretKey))
-	jsonBuff, err := json.Marshal(buff)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		hash := hmac.New(sha256.New, []byte(secretKey))
+		jsonBuff, err := json.Marshal(buff)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		hash.Write(jsonBuff)
+		dst := hash.Sum(nil)
+		if !hmac.Equal(hashData, dst) {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 	}
-	hash.Write(jsonBuff)
-	dst := hash.Sum(nil)
-	if !hmac.Equal(hashData, dst) {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	for _, metric := range buff {
 		switch metric.MType {
 		case "gauge":
