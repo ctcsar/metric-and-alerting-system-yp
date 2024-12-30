@@ -2,7 +2,10 @@ package server
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -270,7 +273,7 @@ func (h Handler) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Request) {
+func (h Handler) JSONUpdateAllMetricsHandler(secretKey string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var buff []Metrics
@@ -279,6 +282,26 @@ func (h Handler) JSONUpdateAllMetricsHandler(w http.ResponseWriter, r *http.Requ
 	err := decoder.Decode(&buff)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	respHash := r.Header.Get("HashSHA256")
+	hashData, err := hex.DecodeString(respHash)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	hash := hmac.New(sha256.New, []byte(secretKey))
+	jsonBuff, err := json.Marshal(buff)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	hash.Write(jsonBuff)
+	dst := hash.Sum(nil)
+	if !hmac.Equal(hashData, dst) {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -308,7 +331,7 @@ func (h Handler) PingHandler(ctx context.Context, db *sql.DB, w http.ResponseWri
 	}
 	w.WriteHeader(http.StatusOK)
 }
-func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, db *sql.DB) {
+func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, db *sql.DB, secretKey string) {
 	h := Handler{
 		MemStorage: metrics,
 	}
@@ -316,16 +339,16 @@ func Routers(ctx context.Context, handler chi.Router, metrics *storage.Storage, 
 	handler.Get("/", h.GetAllMetricsHandler)
 	handler.Post("/update/{type}/{name}/{value}", h.UpdateHandler)
 	handler.Post("/update/", h.JSONUpdateHandler)
-	handler.Post("/updates/", h.JSONUpdateAllMetricsHandler)
+	handler.Post("/updates/", func(w http.ResponseWriter, r *http.Request) { h.JSONUpdateAllMetricsHandler(secretKey, w, r) })
 	handler.Post("/value/", h.GetJSONMetricValueHandler)
 	handler.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		h.PingHandler(ctx, db, w, r)
 	})
 }
 
-func Run(ctx context.Context, url string, handler chi.Router, metrics *storage.Storage, db *sql.DB) error {
+func Run(ctx context.Context, url string, handler chi.Router, metrics *storage.Storage, db *sql.DB, secretKey string) error {
 	logger.Log.Info("starting server", zap.String("url", url))
 	handler = logger.RequestLogger(handler)
-	Routers(ctx, handler, metrics, db)
+	Routers(ctx, handler, metrics, db, secretKey)
 	return http.ListenAndServe(url, compress.GzipMiddleware(handler))
 }
