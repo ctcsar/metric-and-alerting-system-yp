@@ -15,6 +15,7 @@ type serverFlags struct {
 	storagePath   string
 	restore       bool
 	databaseDSN   string
+	key           string
 }
 
 func NewServerFlags() *serverFlags {
@@ -29,6 +30,7 @@ func (f *serverFlags) SetServerFlags() {
 	flag.StringVar(&f.storagePath, "f", "storage.txt", "name of file to save metrics")
 	flag.BoolVar(&f.restore, "r", true, "restore metrics from file")
 	flag.StringVar(&f.databaseDSN, "d", "postgres://metrics:password@localhost:5432/metrics?sslmode=disable", "path to database")
+	flag.StringVar(&f.key, "k", "", "secret key")
 }
 
 func (f *serverFlags) GetServerURL() string {
@@ -67,4 +69,11 @@ func (f *serverFlags) GetDatabasePath() string {
 		f.databaseDSN = envDatabaseDSN
 	}
 	return f.databaseDSN
+}
+
+func (f *serverFlags) GetKey() string {
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		f.key = envKey
+	}
+	return f.key
 }

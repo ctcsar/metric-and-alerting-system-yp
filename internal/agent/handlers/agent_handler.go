@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -31,10 +33,10 @@ type sendMetrics struct {
 	Value float64 `json:"value"`
 }
 
-func SendMetric(ctx context.Context, sendURL string, metrics *storage.Metrics) error {
+func SendMetric(ctx context.Context, sendURL string, metrics *storage.Metrics, secretKey string) error {
 
 	err := retry.Retry(func() error {
-		return sendData(sendURL, metrics)
+		return sendData(sendURL, metrics, secretKey)
 	}, maxRetries, ctx, retryDelays)
 
 	if err != nil {
@@ -44,7 +46,7 @@ func SendMetric(ctx context.Context, sendURL string, metrics *storage.Metrics) e
 	return nil
 }
 
-func sendData(sendURL string, metrics *storage.Metrics) error {
+func sendData(sendURL string, metrics *storage.Metrics, secretKey string) error {
 	var req []sendMetrics
 
 	for k, v := range metrics.Gauge {
@@ -84,9 +86,14 @@ func sendData(sendURL string, metrics *storage.Metrics) error {
 
 	client := resty.New()
 
+	h := hmac.New(sha256.New, []byte(secretKey))
+	h.Write(jsonReq)
+	dst := h.Sum(nil)
+
 	resp, err := client.R().
 		SetBody(buf.Bytes()).
 		SetHeader("Content-Encoding", "gzip").
+		SetHeader("HashSHA256", fmt.Sprintf("%x", dst)).
 		Post(url.String())
 
 	if err != nil {

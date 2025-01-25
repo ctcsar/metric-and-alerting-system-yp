@@ -84,7 +84,7 @@ func main() {
 		}
 	}()
 
-	if err := h.Run(ctx, url.Host, handler, metrics, db); err != nil {
+	if err := h.Run(ctx, url.Host, handler, metrics, db, flags.GetKey()); err != nil {
 		logger.Log.Fatal("cannot run handlers", zap.Error(err))
 		return
 	}

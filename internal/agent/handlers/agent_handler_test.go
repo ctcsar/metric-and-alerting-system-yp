@@ -32,7 +32,7 @@ func TestSendMetric(t *testing.T) {
 				},
 			}
 
-			err := SendMetric(ctx, r.URL.String(), metrics)
+			err := SendMetric(ctx, r.URL.String(), metrics, "secretKey")
 			assert.NoError(t, err)
 		})
 
@@ -43,7 +43,7 @@ func TestSendMetric(t *testing.T) {
 				},
 			}
 
-			err := SendMetric(ctx, "invalidURL", metrics)
+			err := SendMetric(ctx, "invalidURL", metrics, "secretKey")
 			assert.Error(t, err)
 		})
 
@@ -73,7 +73,7 @@ func TestSendData(t *testing.T) {
 				},
 			}
 
-			err := sendData(r.URL.String(), metrics)
+			err := sendData(r.URL.String(), metrics, "secretKey")
 			assert.NoError(t, err)
 		})
 
@@ -84,7 +84,7 @@ func TestSendData(t *testing.T) {
 				},
 			}
 
-			err := sendData("invalidURL", metrics)
+			err := sendData("invalidURL", metrics, "secretKey")
 			assert.Error(t, err)
 		})
 		t.Run("Different types of metrics", func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestSendData(t *testing.T) {
 				},
 			}
 
-			err := sendData(r.URL.String(), metrics)
+			err := sendData(r.URL.String(), metrics, "secretKey")
 			assert.NoError(t, err)
 		})
 

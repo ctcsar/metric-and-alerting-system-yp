@@ -35,7 +35,7 @@ func main() {
 		case <-time.After(flags.GetSendDuration() * time.Second):
 			metrics := memStorage.Metrics
 			if metrics.Gauge != nil || metrics.Counter != nil {
-				err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics)
+				err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics, flags.GetKey())
 				if err != nil {
 					logger.Log.Error("cannot send metric:", zap.Error(err))
 					return
