@@ -8,6 +8,11 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
+	"go.uber.org/zap"
 )
 
 type MemStorage struct {
@@ -65,6 +70,31 @@ func (m *MemStorage) SetCounter(count int64) {
 
 	m.Metrics.Counter = map[string]int64{
 		"PollCount": count,
+	}
+}
+
+func (m *MemStorage) SetMoreMetrics() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	for {
+		select {
+		case <-c:
+			return
+		case <-time.After(1 * time.Second):
+			m.SetMoreMetrics()
+			virtualMem, _ := mem.VirtualMemory()
+			CPUInfo, err := cpu.Percent(0, false)
+			if err != nil {
+				logger.Log.Fatal("cannot get cpu percent", zap.Error(err))
+			}
+
+			m.Metrics.Gauge = map[string]float64{
+				"TotalMemory":     float64(virtualMem.Total),
+				"FreeMemory":      float64(virtualMem.Free),
+				"CPUutilization1": CPUInfo[0],
+			}
+
+		}
 	}
 }
 
