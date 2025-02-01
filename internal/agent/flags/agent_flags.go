@@ -14,6 +14,7 @@ type agentFlags struct {
 	sendTime      int
 	getMetricTime int
 	key           string
+	rateLimit     int
 }
 
 var err error
@@ -26,6 +27,7 @@ func (f *agentFlags) SetAgentFlags() {
 	flag.IntVar(&f.sendTime, "r", 10, "time in seconds to send metrics")
 	flag.IntVar(&f.getMetricTime, "p", 2, "time in seconds to get metrics")
 	flag.StringVar(&f.key, "k", "", "secret key")
+	flag.IntVar(&f.rateLimit, "l", 1, "rate limit")
 }
 func (f agentFlags) GetURLForSend() string {
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
@@ -60,4 +62,14 @@ func (f agentFlags) GetKey() string {
 		f.key = envKey
 	}
 	return f.key
+}
+
+func (f agentFlags) GetRateLimit() int {
+	if envRateLimit := os.Getenv("RATE_LIMIT"); envRateLimit != "" {
+		f.rateLimit, err = strconv.Atoi(envRateLimit)
+		if err != nil {
+			logger.Log.Fatal("cannot convert RATE_LIMIT")
+		}
+	}
+	return f.rateLimit
 }
