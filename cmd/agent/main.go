@@ -43,16 +43,17 @@ func main() {
 			fmt.Println("Agent stopped")
 			os.Exit(0)
 		case <-time.After(flags.GetSendDuration() * time.Second):
-			go workerPool.SubmitTask(func() {
-				metrics := memStorage.Metrics
-				if metrics.Gauge != nil || metrics.Counter != nil {
-					fmt.Println("Sending metrics")
-					err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics, flags.GetKey())
-					if err != nil {
-						logger.Log.Error("cannot send metric:", zap.Error(err))
+			for i := 0; i < flags.GetRateLimit(); i++ {
+				go workerPool.SubmitTask(func() {
+					metrics := memStorage.Metrics
+					if metrics.Gauge != nil || metrics.Counter != nil {
+						err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics, flags.GetKey())
+						if err != nil {
+							logger.Log.Error("cannot send metric:", zap.Error(err))
+						}
 					}
-				}
-			})
+				})
+			}
 		}
 	}
 }
