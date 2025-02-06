@@ -25,7 +25,10 @@ func (wp *WorkerPool) Start(ctx context.Context) {
 			defer wp.workerWg.Done()
 			for {
 				select {
-				case task := <-wp.taskQueue:
+				case task, ok := <-wp.taskQueue:
+					if !ok {
+						return
+					}
 					task()
 				case <-ctx.Done():
 					return

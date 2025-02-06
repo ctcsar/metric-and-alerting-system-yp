@@ -28,6 +28,7 @@ func main() {
 	ctx := context.Background()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
+	sendTicker := time.NewTicker(flags.GetSendDuration() * time.Second)
 
 	workerPool := workerpool.NewWorkerPool(flags.GetRateLimit())
 
@@ -36,24 +37,24 @@ func main() {
 	defer workerPool.Stop()
 
 	go memStorage.GetMetrics(flags.GetMetricsGetDuration())
-	go memStorage.SetMoreMetrics()
+	go memStorage.SetMoreMetrics(ctx)
 	for {
 		select {
 		case <-c:
 			fmt.Println("Agent stopped")
-			os.Exit(0)
-		case <-time.After(flags.GetSendDuration() * time.Second):
-			for i := 0; i < flags.GetRateLimit(); i++ {
-				go workerPool.SubmitTask(func() {
-					metrics := memStorage.Metrics
-					if metrics.Gauge != nil || metrics.Counter != nil {
-						err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics, flags.GetKey())
-						if err != nil {
-							logger.Log.Error("cannot send metric:", zap.Error(err))
-						}
+			return
+		case <-sendTicker.C:
+			workerPool.SubmitTask(func() {
+				memStorage.Mutex.RLock()
+				defer memStorage.Mutex.RUnlock()
+				metrics := memStorage.Metrics
+				if metrics.Gauge != nil || metrics.Counter != nil {
+					err := handlers.SendMetric(ctx, flags.GetURLForSend(), &metrics, flags.GetKey())
+					if err != nil {
+						logger.Log.Error("cannot send metric:", zap.Error(err))
 					}
-				})
-			}
+				}
+			})
 		}
 	}
 }
