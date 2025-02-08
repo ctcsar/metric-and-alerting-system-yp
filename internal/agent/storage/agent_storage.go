@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"math/rand/v2"
 	"os"
@@ -8,6 +9,11 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/ctcsar/metric-and-alerting-system-yp/internal/logger"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
+	"go.uber.org/zap"
 )
 
 type MemStorage struct {
@@ -68,6 +74,40 @@ func (m *MemStorage) SetCounter(count int64) {
 	}
 }
 
+func (m *MemStorage) SetMoreMetrics(ctx context.Context) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-c:
+			fmt.Println("Received Interrupt, stopping metric collection.")
+			return
+		case <-ctx.Done():
+			fmt.Println("Context canceled, stopping metric collection.")
+			return
+		case <-ticker.C:
+			m.updateMetrics()
+		}
+	}
+}
+
+func (m *MemStorage) updateMetrics() {
+	virtualMem, _ := mem.VirtualMemory()
+	CPUInfo, err := cpu.Percent(0, false)
+	if err != nil {
+		logger.Log.Fatal("cannot get CPU percent", zap.Error(err))
+	}
+
+	m.Metrics.Gauge = map[string]float64{
+		"TotalMemory":     float64(virtualMem.Total),
+		"FreeMemory":      float64(virtualMem.Free),
+		"CPUutilization1": CPUInfo[0],
+	}
+}
 func (m *MemStorage) GetMetrics(duratiomTime time.Duration) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
